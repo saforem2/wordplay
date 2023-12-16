@@ -15,7 +15,7 @@ website:
   open-graph: true
   description: "wordplay: A minimal LLM for research and education."
   page-navigation: true
-  title: "wordplay"
+  title: "💬 wordplay 🤾"
   # title: "Sam Foreman"
   site-url: "https:saforem2.github.io/wordplay"
   favicon: "./favicon.svg"
