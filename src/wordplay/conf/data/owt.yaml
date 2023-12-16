@@ -1,0 +1,5 @@
+_target_: wordplay.configs.DataConfig
+
+dataset: openwebtext
+root_path: null
+out_dir: 'out-openwebtext'

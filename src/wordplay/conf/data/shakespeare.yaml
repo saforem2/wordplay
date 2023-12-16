@@ -1,0 +1,5 @@
+_target_: wordplay.configs.DataConfig
+
+dataset: shakespeare_char
+root_path: null
+out_dir: 'out-shakespeare-char'
