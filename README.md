@@ -1,4 +1,4 @@
-# 💬 `wordplay` 🤾
+#  `wordplay` 🎮 💬
 
 LLM experiments, powered by `wordplay`.
 
