@@ -43,11 +43,111 @@ editor:
    render-on-save: true
 execute:
    freeze: true
+metadata-files:
+  - _website.yml
+  - _format.yml
+  # - _reveal.yml
+format:
+  html: default
+  # revealjs:
+  #  output-file: "slides.html"
+  gfm:
+    author: Sam Foreman
+    output-file: "README.md"
+  revealjs:
+    output-file:  "slides.html"
+    appearance:
+      appearparents: true
+    code-line-numbers: false
+    code-link: false
+    code-copy: false
+    # callout-appearance: simple
+    # syntax-definitions:
+    #   - ./docs/python.xml
+    scrollable: true
+    title-block-style: none
+    slide-number: c
+    title-slide-style: default
+    chalkboard:
+      buttons: false
+    auto-animate: true
+    reference-location: section
+    touch: true
+    pause: false
+    footnotes-hover: true
+    citations-hover: true
+    preview-links: true
+    controls-tutorial: true
+    controls: false
+    logo: "https://raw.githubusercontent.com/saforem2/llm-lunch-talk/main/docs/assets/anl.svg"
+    history: false
+    highlight-style: "atom-one"
+    css:
+      - css/default.css
+      # - css/callouts-html.css
+    theme:
+      # - white
+      # - css/light.scss
+      - css/common.scss
+      - css/dark.scss
+      # - css/syntax-light.scss
+    self-contained: false
+    embed-resources: false
+    self-contained-math: false
+    center: true
+    default-image-extension: svg
+    code-overflow: scroll
+    html-math-method: katex
+    fig-align: center
+    mermaid:
+      theme: dark
+    # revealjs-plugins:
+    #   - RevealMenu
+    menu:
+      markers: true
+      themes:
+        - name: Dark
+          theme: css/dark.scss
+          highlightTheme: css/syntax-dark.scss
+        - name: Light
+          theme: css/light.scss
+          highlightTheme: css/syntax-light.scss
+    themesPath: './docs/css/'
 ---
 
-# `wordplay`
+#  `wordplay` 🎮 💬
 
-A minimal LLM implementation for research and education.
+
+LLM experiments, powered by `wordplay`.
+
+What started as some (simple)
+[modifications](https://github.com/saforem2/nanoGPT) to Andrej Karpathy's
+`nanoGPT`, has grown into the `wordplay` project.
+
+
+# Install
+
+
+- Easy:
+
+    ```bash
+    python3 -m pip install "git+https://github.com/saforem2/wordplay.git"
+    ```
+
+- Development:
+
+    ```bash
+    git clone https://github.com/saforem2/wordplay
+    cd wordplay
+    mkdir v venv
+    python3 -m venv venv --system-site-packages
+    source venv/bin/activate
+    python3 -m pip install -e .
+    ```
+
+<!-- # `wordplay` -->
+<!---->
+<!-- A minimal LLM implementation for research and education. -->
 
 
 <!-- &title=visitors) -->
@@ -61,6 +161,7 @@ A minimal LLM implementation for research and education.
 <!-- </p> -->
 
 <!-- ## [{{< fa solid hourglass-end >}}]{.pink-text} Last Updated -->
+
 
 
 ```{python}
@@ -77,5 +178,5 @@ print(' '.join([
   f"[#1A8FFF]{time}[/]"
 ]))
 ```
+![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)
 
-[![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)]{style="text-align:left;"}
