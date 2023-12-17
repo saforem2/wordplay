@@ -39,7 +39,7 @@ citation:
    url: https://saforem2.github.io/wordplay
 execute:
   # keep-ipynb: true
-  # keep-md: true
+  keep-md: true
   freeze: auto
 metadata-files:
   - _website.yml

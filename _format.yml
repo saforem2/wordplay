@@ -41,4 +41,6 @@ format:
     footnotes-hover: true
     header-includes: |
       <link href="https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css" rel="stylesheet" />
+  # gfm:
+  #   author: Sam Foreman
 

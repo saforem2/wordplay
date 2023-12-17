@@ -51,9 +51,6 @@ format:
   html: default
   # revealjs:
   #  output-file: "slides.html"
-  gfm:
-    author: Sam Foreman
-    output-file: "README.md"
   revealjs:
     output-file:  "slides.html"
     appearance:
@@ -113,10 +110,12 @@ format:
           theme: css/light.scss
           highlightTheme: css/syntax-light.scss
     themesPath: './docs/css/'
+  gfm:
+    author: Sam Foreman
+    output-file: "README.md"
 ---
 
 #  `wordplay` 🎮 💬
-
 
 LLM experiments, powered by `wordplay`.
 
@@ -161,8 +160,6 @@ What started as some (simple)
 <!-- </p> -->
 
 <!-- ## [{{< fa solid hourglass-end >}}]{.pink-text} Last Updated -->
-
-
 
 ```{python}
 #| echo: false
