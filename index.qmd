@@ -85,6 +85,7 @@ format:
       # - css/light.scss
       - css/common.scss
       - css/dark.scss
+      - css/dark-reveal.scss
       # - css/syntax-light.scss
     self-contained: false
     embed-resources: false
@@ -124,9 +125,7 @@ What started as some (simple)
 [modifications](https://github.com/saforem2/nanoGPT) to Andrej Karpathy's
 `nanoGPT`, has grown into the `wordplay` project.
 
-
-# Install
-
+## Install
 
 - Easy:
 
