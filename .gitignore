@@ -1,4 +1,5 @@
 # User added
+*.DS_Store
 data/**/*.txt
 data/**/*.pkl
 data/**/*.bin
