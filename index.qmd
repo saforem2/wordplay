@@ -43,14 +43,12 @@ editor:
    render-on-save: true
 execute:
    freeze: true
-metadata-files:
-  - _website.yml
-  - _format.yml
-  # - _reveal.yml
+# metadata-files:
+#  - _website.yml
+#  - _format.yml
+#  # - _reveal.yml
 format:
   html: default
-  # revealjs:
-  #  output-file: "slides.html"
   revealjs:
     output-file:  "slides.html"
     appearance:
@@ -112,7 +110,10 @@ format:
     themesPath: './docs/css/'
   gfm:
     author: Sam Foreman
-    output-file: "README.md"
+    output-file: "README-gfm.md"
+  # gfm:
+  #  author: Sam Foreman
+  #  output-file: "index.md"
 ---
 
 #  `wordplay` 🎮 💬
