@@ -32,7 +32,7 @@
     "href": "index.html#install",
     "title": "wordplay 🎮 💬",
     "section": "Install",
-    "text": "Install\n\n\nGrab-n-Go\n\nThe easiest way to get the most recent version is to:\npython3 -m pip install \"git+https://github.com/saforem2/wordplay.git\"\n\n\n\nDevelopment\n\nIf you’d like to work with the project and run / change things yourself, I’d recommend installing from a local (editable) clone of this repository:\ngit clone \"https://github.com/saforem2/wordplay\"\ncd wordplay\nmkdir v venv\npython3 -m venv venv --system-site-packages\nsource venv/bin/activate\npython3 -m pip install -e .\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLast Updated: 12/18/2023 @ 09:51:54"
+    "text": "Install\n\n\nGrab-n-Go\n\nThe easiest way to get the most recent version is to:\npython3 -m pip install \"git+https://github.com/saforem2/wordplay.git\"\n\n\n\nDevelopment\n\nIf you’d like to work with the project and run / change things yourself, I’d recommend installing from a local (editable) clone of this repository:\ngit clone \"https://github.com/saforem2/wordplay\"\ncd wordplay\nmkdir v venv\npython3 -m venv venv --system-site-packages\nsource venv/bin/activate\npython3 -m pip install -e .\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLast Updated: 12/18/2023 @ 09:51:56"
   },
   {
     "objectID": "index.html#footnotes",

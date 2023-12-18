@@ -29,7 +29,7 @@ style="text-align: center;">
 <tr class="odd">
 <td style="text-align: center;"><div width="47.1%"
 data-layout-align="center">
-<p><img src="./assets/nanoGPT.png" id="fig-nanoGPT"
+<p><img src="https://github.com/saforem2/wordplay/blob/main/docs/assets/nanoGPT.png?raw=true" id="fig-nanoGPT"
 data-ref-parent="fig-compare" data-fig.extended="false"
 alt="(a) nanoGPT" /></p>
 </div></td>
@@ -39,7 +39,7 @@ width="5.9%" data-layout-align="center">
 </div></td>
 <td style="text-align: center;"><div width="47.1%"
 data-layout-align="center">
-<p><img src="./assets/wordplay.png" id="fig-wordplay"
+<p><img src="https://github.com/saforem2/wordplay/blob/main/docs/assets/wordplay.png?raw=true" id="fig-wordplay"
 data-ref-parent="fig-compare" data-fig.extended="false"
 alt="(b) wordplay" /></p>
 </div></td>

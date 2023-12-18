@@ -1,15 +1,4 @@
 ---
-# citation:
-#    author: Sam Foreman
-#    type: webpage
-#    title: "wordplay"
-#    url: https://saforem2.github.io/wordplay
-# author: ""
-# date: ""
-# author-title: ""
-# affiliation-title: ""
-# published-title: ""
-# modified-title: ""
 site-url: https://saforem2.github.io/wordplay
 website:
   open-graph: true
@@ -18,16 +7,17 @@ website:
   title: "💬 wordplay 🤾"
   # title: "Sam Foreman"
   site-url: "https:saforem2.github.io/wordplay"
-  favicon: "./favicon.svg"
+  favicon: "https://raw.githubusercontent.com/saforem2/wordplay/main/favicon.svg"
   back-to-top-navigation: true
   repo-url: https://github.com/saforem2/wordplay
   repo-actions: [source, edit, issue]
   google-analytics: G-XVM2Y822Y1
   # sidebar: false
-  twitter-card:
-    image: "./assets/thumbnail.png"
-    site: "@saforem2"
-    creator: "@saforem2"
+  # twitter-card:
+  #   image: "./assets/thumbnail.png"
+  #   site: "@saforem2"
+  #   creator: "@saforem2"
+  twitter-card: true
   navbar:
     title: false
     tools:
@@ -147,9 +137,9 @@ What started as some simple
 
 ::: {#fig-compare layout="[[40,-5,40]]" layout-valign="center" style="text-align: center;"}
 
-![`nanoGPT`](./assets/nanoGPT.png){#fig-nanoGPT}
+![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/docs/assets/nanoGPT.png?raw=true){#fig-nanoGPT}
 
-![`wordplay`](./assets/wordplay.png){#fig-wordplay}
+![`wordplay`](https://github.com/saforem2/wordplay/blob/main/docs/assets/wordplay.png?raw=true){#fig-wordplay}
 
 Generated using
 [prodia/sdxl-stable-diffusion-xl](https://huggingface.co/spaces/prodia/sdxl-stable-diffusion-xl)
