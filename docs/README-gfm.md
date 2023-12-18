@@ -1,6 +1,6 @@
 # `wordplay` 🎮 💬
 Sam Foreman
-2023-12-16
+2023-12-17
 
 LLM experiments, powered by `wordplay`.
 
