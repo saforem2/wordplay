@@ -170,30 +170,6 @@ had diverged significantly from the original vision.
 As a result, I figured it made more sense to move things to a new project,
 [`wordplay`](https://github.com/saforem2/wordplay).
 
-<!-- significantly (both in scope and code) from the original project -->
-<!---->
-<!-- As these changes continued to build up, I came to realize that I was building -->
-<!-- something that had noticeably diverged (both in scope and code) from the goals -->
-<!-- of the original project. -->
-<!---->
-
-<!-- wanting to test new ideas or slight -->
-<!-- variations on what was currently possible, and  -->
-<!---->
-<!-- Working through the original code and trying to test new ideas, I was having -->
-<!-- trouble bending the existing implementation to my will. -->
-<!---->
-<!-- As a result, the changes I made here and there gradually led to a project that -->
-<!-- had diverged significantly (both in scope and code) from the goals of the -->
-<!-- original project. -->
-<!---->
-<!-- Seeing as it is unlikely that Andrej will approve my [pull -->
-<!-- request](https://github.com/karpathy/nanoGPT/pull/404), I decided it made more -->
-<!-- sense to move things to a new project which is where you are now. -->
-
-<!-- Certain design choices and implementation decisions are (obviously) personal, -->
-<!-- but (hopefully) useful to others. -->
-
 I've priortized adding functionality that I have found to be useful or
 interesting, but am absolutely open to input or suggestions for improvement.
 
