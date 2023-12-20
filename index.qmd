@@ -159,11 +159,11 @@ What started as some simple
 <!-- on 🤗 HuggingFace. -->
 <!-- ::: -->
 
-::: {#fig-compare layout="[[-1,4,8,-1]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
+::: {#fig-compare layout="[[40,-10,40]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
 
-![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/assets/car.png?raw=true){#fig-nanogpt style="height: 200px"}
+![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/assets/car.png?raw=true){#fig-nanogpt width="256px"}
 
-![`wordplay`](https://github.com/saforem2/wordplay/blob/main/assets/robot.png?raw=true){#fig-wordplay width="150px" style="height: 256px;"}
+![`wordplay`](https://github.com/saforem2/wordplay/blob/main/assets/robot.png?raw=true){#fig-wordplay width="150px"}
 
 Imagine `nanoGPT`, with _all_ the add-ons.
 ::::

@@ -48,34 +48,29 @@ style="display: flex; align-items: flex-end;">
 
 <table style="width:100%;">
 <colgroup>
-<col style="width: 7%" />
-<col style="width: 28%" />
-<col style="width: 57%" />
-<col style="width: 7%" />
+<col style="width: 44%" />
+<col style="width: 11%" />
+<col style="width: 44%" />
 </colgroup>
 <tbody>
 <tr class="odd">
-<td style="text-align: center;"><div class="quarto-figure-spacer"
-width="7.1%" data-layout-align="center">
-<p> </p>
-</div></td>
-<td style="text-align: center;"><div width="28.6%"
+<td style="text-align: center;"><div width="44.4%"
 data-layout-align="center">
 <p><img
 src="https://github.com/saforem2/wordplay/blob/main/assets/car.png?raw=true"
-id="fig-nanogpt" style="height: 200px" data-ref-parent="fig-compare"
-data-fig.extended="false" alt="(a) nanoGPT" /></p>
+id="fig-nanogpt" data-ref-parent="fig-compare" data-fig.extended="false"
+width="256" alt="(a) nanoGPT" /></p>
 </div></td>
-<td style="text-align: center;"><div width="57.1%"
+<td style="text-align: center;"><div class="quarto-figure-spacer"
+width="11.1%" data-layout-align="center">
+<p> </p>
+</div></td>
+<td style="text-align: center;"><div width="44.4%"
 data-layout-align="center">
 <p><img
 src="https://github.com/saforem2/wordplay/blob/main/assets/robot.png?raw=true"
-id="fig-wordplay" style="height: 256px;" data-ref-parent="fig-compare"
+id="fig-wordplay" data-ref-parent="fig-compare"
 data-fig.extended="false" width="150" alt="(b) wordplay" /></p>
-</div></td>
-<td style="text-align: center;"><div class="quarto-figure-spacer"
-width="7.1%" data-layout-align="center">
-<p> </p>
 </div></td>
 </tr>
 </tbody>
@@ -220,7 +215,7 @@ python3 -m pip install -e .
 
 ------------------------------------------------------------------------
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">10:01:13</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">10:05:31</span>
 </pre>
 
 ![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)
