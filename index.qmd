@@ -113,6 +113,7 @@ format:
   #  output-file: "index.md"
   gfm:
     author: Sam Foreman
+    toc: true
     output-file: "README.md"
 ---
 
@@ -145,16 +146,26 @@ What started as some simple
 
 <!-- ::: {layout="[15,-10,15]" layout-valign="bottom"} -->
 
-:::: {.columns style="display: flex; align-items: flex-end; text-align:center; margin-bottom: 2em;"}
+<!-- :::: {#fig-compare layout-ncol=2 layout-valign="bottom" style="display: flex; align-items: flex-end; text-align:center;"} -->
 
-::: {.column}
-![`nanoGPT`](./assets/car.png){#fig-nanogpt style="max-height: 200px"}
-:::
+<!-- ::: {#fig-compare layout="[[40,-5,40]]" layout-valign="center" style="text-align: center;"} -->
+<!---->
+<!-- ![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/docs/assets/nanoGPT.png?raw=true){#fig-nanoGPT} -->
+<!---->
+<!-- ![`wordplay`](https://github.com/saforem2/wordplay/blob/main/docs/assets/wordplay.png?raw=true){#fig-wordplay} -->
+<!---->
+<!-- Generated using -->
+<!-- [prodia/sdxl-stable-diffusion-xl](https://huggingface.co/spaces/prodia/sdxl-stable-diffusion-xl) -->
+<!-- on 🤗 HuggingFace. -->
+<!-- ::: -->
 
-::: {.column}
-![`wordplay`](./assets/robot.png){#fig-wordplay style="max-height: 256px"}
-:::
+::: {#fig-compare layout="[[-1,4,8,-1]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
 
+![`nanoGPT`](./assets/car.png){#fig-nanogpt style="height: 200px"}
+
+![`wordplay`](./assets/robot.png){#fig-wordplay width="150px" style="height: 256px;"}
+
+Imagine `nanoGPT`, with _all_ the add-ons.
 ::::
 
 <details closed><summary>If you're curious...</summary>
