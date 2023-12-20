@@ -161,9 +161,9 @@ What started as some simple
 
 ::: {#fig-compare layout="[[-1,4,8,-1]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
 
-![`nanoGPT`](./assets/car.png){#fig-nanogpt style="height: 200px"}
+![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/docs/assets/car.png?raw=true){#fig-nanogpt style="height: 200px"}
 
-![`wordplay`](./assets/robot.png){#fig-wordplay width="150px" style="height: 256px;"}
+![`wordplay`](https://github.com/saforem2/wordplay/blob/main/docs/assets/robot.png?raw=true){#fig-wordplay width="150px" style="height: 256px;"}
 
 Imagine `nanoGPT`, with _all_ the add-ons.
 ::::

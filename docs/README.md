@@ -59,14 +59,16 @@ width="7.1%" data-layout-align="center">
 </div></td>
 <td style="text-align: center;"><div width="28.6%"
 data-layout-align="center">
-<p><img src="./assets/car.png" id="fig-nanogpt" style="height: 200px"
-data-ref-parent="fig-compare" data-fig.extended="false"
-alt="(a) nanoGPT" /></p>
+<p><img
+src="https://github.com/saforem2/wordplay/blob/main/docs/assets/car.png?raw=true"
+id="fig-nanogpt" style="height: 200px" data-ref-parent="fig-compare"
+data-fig.extended="false" alt="(a) nanoGPT" /></p>
 </div></td>
 <td style="text-align: center;"><div width="57.1%"
 data-layout-align="center">
-<p><img src="./assets/robot.png" id="fig-wordplay"
-style="height: 256px;" data-ref-parent="fig-compare"
+<p><img
+src="https://github.com/saforem2/wordplay/blob/main/docs/assets/robot.png?raw=true"
+id="fig-wordplay" style="height: 256px;" data-ref-parent="fig-compare"
 data-fig.extended="false" width="150" alt="(b) wordplay" /></p>
 </div></td>
 <td style="text-align: center;"><div class="quarto-figure-spacer"
@@ -216,7 +218,7 @@ python3 -m pip install -e .
 
 ------------------------------------------------------------------------
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:54:41</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:56:17</span>
 </pre>
 
 ![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)
