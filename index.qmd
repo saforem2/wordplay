@@ -4,7 +4,7 @@ website:
   open-graph: true
   description: "wordplay: A minimal LLM for research and education."
   page-navigation: true
-  # title: "<code>wordplay</code> 🎮 💬"
+  title: "`wordplay` 🎮 💬"
   # title: "💬 wordplay 🤾"
   # title: "Sam Foreman"
   site-url: "https:saforem2.github.io/wordplay"
@@ -121,7 +121,7 @@ format:
 <!---->
 <!-- ::: {.quarto-title-block} -->
 <!---->
-<!-- #  [`wordplay` 🎮 💬]{.title} -->
+#  [`wordplay` 🎮 💬]{.title}
 <!---->
 <!-- ::: -->
 <!---->

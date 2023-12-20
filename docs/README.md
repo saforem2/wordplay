@@ -1,7 +1,8 @@
-# Background
+# <span class="title">`wordplay` 🎮 💬</span>
 Sam Foreman
 2023-12-20
 
+- [Background](#background)
 - [Completed](#completed)
 - [In Progress](#in-progress)
 - [Install](#install)
@@ -10,7 +11,6 @@ Sam Foreman
 <!---->
 <!-- ::: {.quarto-title-block} -->
 <!---->
-<!-- #  [`wordplay` 🎮 💬]{.title} -->
 <!---->
 <!-- ::: -->
 <!---->
@@ -20,6 +20,8 @@ Sam Foreman
 
 A set of simple, **scalable** and *highly configurable* tools for
 working[^1] with LLMs.
+
+## Background
 
 What started as some simple
 [modifications](https://github.com/saforem2/nanoGPT) to Andrej
@@ -218,7 +220,7 @@ python3 -m pip install -e .
 
 ------------------------------------------------------------------------
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:59:07</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">10:01:13</span>
 </pre>
 
 ![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)

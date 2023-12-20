@@ -16,7 +16,7 @@
 
   <meta name="author" content="Sam Foreman ">
   <meta name="dcterms.date" content="2023-12-20">
-  <title>wordplay - wordplay 🎮 💬</title>
+  <title>wordplay 🎮 💬</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -426,11 +426,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
   <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
-<meta property="og:title" content="wordplay - wordplay 🎮 💬">
-<meta property="og:site-name" content="wordplay">
-<meta name="twitter:title" content="wordplay - wordplay 🎮 💬">
+<meta property="og:title" content="wordplay 🎮 💬">
+<meta property="og:site-name" content="`wordplay` 🎮 💬">
+<meta name="twitter:title" content="wordplay 🎮 💬">
 <meta name="twitter:card" content="summary">
-<meta name="citation_title" content="Background">
+<meta name="citation_title" content="[`wordplay` 🎮 💬]{.title}">
 <meta name="citation_author" content="Sam Foreman">
 <meta name="citation_publication_date" content="2023-12-20">
 <meta name="citation_cover_date" content="2023-12-20">
@@ -457,7 +457,7 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Background</h1>
+  <h1 class="title"><span class="title"><code>wordplay</code> 🎮 💬</span></h1>
 
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
@@ -478,13 +478,25 @@
 <!---->
 <!-- ::: {.quarto-title-block} -->
 <!---->
-<!-- #  [`wordplay` 🎮 💬]{.title} -->
 <!---->
 <!-- ::: -->
 <!---->
 <!-- ::: -->
 <p><em>Playing with words</em>.</p>
 <p>A set of simple, <strong>scalable</strong> and <em>highly configurable</em> tools for working<sup>1</sup> with LLMs.</p>
+<aside><ol class="aside-footnotes"><li id="fn1"><div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"training"</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"fine-tuning"</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"benchmarking"</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"parallelizing"</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"distributing"</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"measuring"</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"..."</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>large models at scale.</p></li></ol></aside></section>
+
+<section id="background" class="slide level2 scrollable center">
+<h2>Background</h2>
 <p>What started as some simple <a href="https://github.com/saforem2/nanoGPT">modifications</a> to Andrej Karpathy's <code>nanoGPT</code> has now grown into the <code>wordplay</code> project.</p>
 <!-- ::: {#fig-compare gap="5%" layout="[[40,40]]" layout-valign="bottom" style="text-align: center!important;" fig-align="center"} -->
 <!-- ::: {layout-ncol=2 gap="5%" layout-valign="bottom"} -->
@@ -535,7 +547,7 @@
 <summary>
 If you’re curious…
 </summary>
-<p>While <code>nanoGPT</code> is a great project and an <strong>excellent</strong> resource; it is, <em>by design</em>, very minimal<sup>2</sup> and limited in its flexibility.</p>
+<p>While <code>nanoGPT</code> is a great project and an <strong>excellent</strong> resource; it is, <em>by design</em>, very minimal<sup>1</sup> and limited in its flexibility.</p>
 <p>Working through the code I found myself making minor changes here and there to test new ideas and run variations on different experiments. These changes eventually built to the point where <em>my</em> <code>{goals, scope, code}</code> for the project had diverged significantly from the original vision.</p>
 <p>As a result, I figured it made more sense to move things to a new project, <a href="https://github.com/saforem2/wordplay"><code>wordplay</code></a>.</p>
 <p>I’ve priortized adding functionality that I have found to be useful or interesting, but am absolutely open to input or suggestions for improvement.</p>
@@ -579,16 +591,7 @@ If you’re curious…
 </ul></li>
 </ul>
 </details>
-<aside><ol class="aside-footnotes"><li id="fn1"><div class="sourceCode" id="cb1"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"training"</span><span class="fu">,</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"fine-tuning"</span><span class="fu">,</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"benchmarking"</span><span class="fu">,</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"parallelizing"</span><span class="fu">,</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"distributing"</span><span class="fu">,</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"measuring"</span><span class="fu">,</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">"..."</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
-<p>large models at scale.</p></li><li id="fn2"><p><code>nano</code>, even 😂</p></li></ol></aside></section>
+<aside><ol class="aside-footnotes"><li id="fn2"><p><code>nano</code>, even 😂</p></li></ol></aside></section>
 
 <section id="completed" class="slide level2 center">
 <h2>Completed</h2>
@@ -660,7 +663,7 @@ Development
 
 <div class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:58:54</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">10:00:47</span>
 </pre>
 </div>
 </div>
