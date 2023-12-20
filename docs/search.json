@@ -25,7 +25,7 @@
     "href": "index.html#install",
     "title": "Background",
     "section": "Install",
-    "text": "Install\n\n\nGrab-n-Go\n\nThe easiest way to get the most recent version is to:\npython3 -m pip install \"git+https://github.com/saforem2/wordplay.git\"\n\n\n\nDevelopment\n\nIf you’d like to work with the project and run / change things yourself, I’d recommend installing from a local (editable) clone of this repository:\ngit clone \"https://github.com/saforem2/wordplay\"\ncd wordplay\nmkdir v venv\npython3 -m venv venv --system-site-packages\nsource venv/bin/activate\npython3 -m pip install -e .\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLast Updated: 12/20/2023 @ 09:55:57"
+    "text": "Install\n\n\nGrab-n-Go\n\nThe easiest way to get the most recent version is to:\npython3 -m pip install \"git+https://github.com/saforem2/wordplay.git\"\n\n\n\nDevelopment\n\nIf you’d like to work with the project and run / change things yourself, I’d recommend installing from a local (editable) clone of this repository:\ngit clone \"https://github.com/saforem2/wordplay\"\ncd wordplay\nmkdir v venv\npython3 -m venv venv --system-site-packages\nsource venv/bin/activate\npython3 -m pip install -e .\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nLast Updated: 12/20/2023 @ 09:58:54"
   },
   {
     "objectID": "index.html#footnotes",
@@ -60,6 +60,6 @@
     "href": "slides.html#references",
     "title": "Background",
     "section": "",
-    "text": "Last Updated: 12/20/2023 @ 09:55:57\n\n\n\n\n\n\n\n\n\n\n\nSong, Shuaiwen Leon, Bonnie Kruft, Minjia Zhang, Conglong Li, Shiyang Chen, Chengming Zhang, Masahiro Tanaka, et al. 2023. “DeepSpeed4Science Initiative: Enabling Large-Scale Scientific Discovery Through Sophisticated AI System Technologies.” https://arxiv.org/abs/2310.04610."
+    "text": "Last Updated: 12/20/2023 @ 09:58:54\n\n\n\n\n\n\n\n\n\n\n\nSong, Shuaiwen Leon, Bonnie Kruft, Minjia Zhang, Conglong Li, Shiyang Chen, Chengming Zhang, Masahiro Tanaka, et al. 2023. “DeepSpeed4Science Initiative: Enabling Large-Scale Scientific Discovery Through Sophisticated AI System Technologies.” https://arxiv.org/abs/2310.04610."
   }
 ]
