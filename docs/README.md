@@ -1,6 +1,16 @@
 # `wordplay` 🎮 💬
 Sam Foreman
-2023-12-18
+2023-12-20
+
+<!-- ::: {.quarto-title} -->
+<!---->
+<!-- ::: {.quarto-title-block} -->
+<!---->
+<!-- #  [`wordplay` 🎮 💬]{.title} -->
+<!---->
+<!-- ::: -->
+<!---->
+<!-- ::: -->
 
 *Playing with words*.
 
@@ -13,43 +23,25 @@ What started as some simple
 [modifications](https://github.com/saforem2/nanoGPT) to Andrej
 Karpathy's `nanoGPT` has now grown into the `wordplay` project.
 
-<!-- ::: {#fig-elephants layout="[[45,45]]"} -->
-<!-- ::: {#fig-elephants layout-ncol=2 gap="10pt"} -->
+<!-- ::: {#fig-compare gap="5%" layout="[[40,40]]" layout-valign="bottom" style="text-align: center!important;" fig-align="center"} -->
+<!-- ::: {layout-ncol=2 gap="5%" layout-valign="bottom"} -->
+<!-- :::: {.columns layout-ncol=2 layout-valign="bottom" style="margin-bottom: 4em;" style="text-align:center"} -->
+<!-- ::: {layout="[15,-10,15]" layout-valign="bottom"} -->
 
-<div id="fig-compare" layout-valign="center"
-style="text-align: center;">
+<div class="columns"
+style="display: flex; align-items: flex-end; text-align:center; margin-bottom: 2em;">
 
-<table>
-<colgroup>
-<col style="width: 47%" />
-<col style="width: 5%" />
-<col style="width: 47%" />
-</colgroup>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;"><div width="47.1%"
-data-layout-align="center">
-<p><img src="https://github.com/saforem2/wordplay/blob/main/docs/assets/nanoGPT.png?raw=true" id="fig-nanoGPT"
-data-ref-parent="fig-compare" data-fig.extended="false"
-alt="(a) nanoGPT" /></p>
-</div></td>
-<td style="text-align: center;"><div class="quarto-figure-spacer"
-width="5.9%" data-layout-align="center">
-<p> </p>
-</div></td>
-<td style="text-align: center;"><div width="47.1%"
-data-layout-align="center">
-<p><img src="https://github.com/saforem2/wordplay/blob/main/docs/assets/wordplay.png?raw=true" id="fig-wordplay"
-data-ref-parent="fig-compare" data-fig.extended="false"
-alt="(b) wordplay" /></p>
-</div></td>
-</tr>
-</tbody>
-</table>
+<div class="column">
 
-Figure 1: Generated using
-[prodia/sdxl-stable-diffusion-xl](https://huggingface.co/spaces/prodia/sdxl-stable-diffusion-xl)
-on 🤗 HuggingFace.
+<img src="./assets/car.png" style="max-height: 200px" />
+
+</div>
+
+<div class="column">
+
+<img src="./assets/robot.png" style="max-height: 256px" />
+
+</div>
 
 </div>
 
@@ -188,12 +180,13 @@ python3 -m pip install -e .
 
 ------------------------------------------------------------------------
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">18</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:51:56</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">09:09:58</span>
 </pre>
 
 ![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)
 
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent"
+entry-spacing="0">
 
 <div id="ref-song2023deepspeed4science" class="csl-entry">
 

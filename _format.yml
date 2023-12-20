@@ -6,7 +6,7 @@ format:
     toc: true
     self-contained: false
     toc-location: right
-    page-layout: full
+    page-layout: article
     grid:
       body-width: 1150px
     fig-responsive: true

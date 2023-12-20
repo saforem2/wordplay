@@ -1,4 +1,5 @@
-title: wordplay
+title: "`wordplay` 🎮 💬"
+# title: wordplay
 date: last-modified
 # date: today
 author-title: ""
@@ -15,9 +16,9 @@ twitter-card: true
 site-url: https://saforem2.github.io/wordplay
 google-scholar: true
 citeproc: true
-filters:
-  - lightbox
-lightbox: auto
+# filters:
+#   - lightbox
+# lightbox: auto
 project:
   render:
     - index.qmd
@@ -35,11 +36,11 @@ author:
 citation:
    author: Sam Foreman
    type: webpage
-   title: "wordplay"
+   # title: "wordplay"
    url: https://saforem2.github.io/wordplay
 execute:
   # keep-ipynb: true
-  keep-md: true
+  # keep-md: true
   freeze: auto
 metadata-files:
   - _website.yml

@@ -4,7 +4,8 @@ website:
   open-graph: true
   description: "wordplay: A minimal LLM for research and education."
   page-navigation: true
-  title: "💬 wordplay 🤾"
+  # title: "<code>wordplay</code> 🎮 💬"
+  # title: "💬 wordplay 🤾"
   # title: "Sam Foreman"
   site-url: "https:saforem2.github.io/wordplay"
   favicon: "https://raw.githubusercontent.com/saforem2/wordplay/main/favicon.svg"
@@ -29,10 +30,10 @@ website:
             url: https://github.com/saforem2/wordplay/blob/master/index.qmd
           - text: New Issue
             url: https://github.com/saforem2/wordplay/issues/new/choose
-editor:
-   render-on-save: true
-execute:
-   freeze: true
+# editor:
+#   render-on-save: true
+# execute:
+#   freeze: true
 # metadata-files:
 #  - _website.yml
 #  - _format.yml
@@ -40,6 +41,7 @@ execute:
 format:
   html: default
   revealjs:
+    scrollable: true
     output-file:  "slides.html"
     appearance:
       appearparents: true
@@ -49,7 +51,6 @@ format:
     # callout-appearance: simple
     # syntax-definitions:
     #   - ./docs/python.xml
-    scrollable: true
     title-block-style: none
     slide-number: c
     title-slide-style: default
@@ -77,12 +78,10 @@ format:
       # - css/dark.scss
       # - css/syntax-dark.scss
       # - css/slides-dark.scss
-
       - css/common.scss
       - css/dark.scss
       - css/syntax-dark.scss
       - css/dark-reveal.scss
-
       # - white
       # - css/light.scss
       # - css/dark-reveal.scss
@@ -99,25 +98,33 @@ format:
     #   theme: dark
     # revealjs-plugins:
     #   - RevealMenu
-    menu:
-      markers: true
-      themes:
-        - name: Dark
-          theme: css/dark.scss
-          highlightTheme: css/syntax-dark.scss
-        - name: Light
-          theme: css/light.scss
-          highlightTheme: css/syntax-light.scss
-    themesPath: './docs/css/'
-  gfm:
-    author: Sam Foreman
-    output-file: "README-gfm.md"
+    # menu:
+    #   markers: true
+    #   themes:
+    #     - name: Dark
+    #       theme: css/dark.scss
+    #       highlightTheme: css/syntax-dark.scss
+    #     - name: Light
+    #       theme: css/light.scss
+    #       highlightTheme: css/syntax-light.scss
+    # themesPath: './docs/css/'
   # gfm:
   #  author: Sam Foreman
   #  output-file: "index.md"
+  gfm:
+    author: Sam Foreman
+    output-file: "README.md"
 ---
 
-#  `wordplay` 🎮 💬
+<!-- ::: {.quarto-title} -->
+<!---->
+<!-- ::: {.quarto-title-block} -->
+<!---->
+<!-- #  [`wordplay` 🎮 💬]{.title} -->
+<!---->
+<!-- ::: -->
+<!---->
+<!-- ::: -->
 
 _Playing with words_.
 
@@ -125,27 +132,30 @@ A set of simple, **scalable** and _highly configurable_ tools for working[^etc]
 with LLMs.
 
 
-## Background
+## Background {.scrollable}
 
 What started as some simple
 [modifications](https://github.com/saforem2/nanoGPT) to Andrej Karpathy\'s
 `nanoGPT` has now grown into the `wordplay` project.
 
-<!-- ::: {#fig-elephants layout="[[45,45]]"} -->
+<!-- ::: {#fig-compare gap="5%" layout="[[40,40]]" layout-valign="bottom" style="text-align: center!important;" fig-align="center"} -->
+<!-- ::: {layout-ncol=2 gap="5%" layout-valign="bottom"} -->
 
-<!-- ::: {#fig-elephants layout-ncol=2 gap="10pt"} -->
+<!-- :::: {.columns layout-ncol=2 layout-valign="bottom" style="margin-bottom: 4em;" style="text-align:center"} -->
 
-::: {#fig-compare layout="[[40,-5,40]]" layout-valign="center" style="text-align: center;"}
+<!-- ::: {layout="[15,-10,15]" layout-valign="bottom"} -->
 
-![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/docs/assets/nanoGPT.png?raw=true){#fig-nanoGPT}
+:::: {.columns style="display: flex; align-items: flex-end; text-align:center; margin-bottom: 2em;"}
 
-![`wordplay`](https://github.com/saforem2/wordplay/blob/main/docs/assets/wordplay.png?raw=true){#fig-wordplay}
-
-Generated using
-[prodia/sdxl-stable-diffusion-xl](https://huggingface.co/spaces/prodia/sdxl-stable-diffusion-xl)
-on 🤗 HuggingFace.
+::: {.column}
+![`nanoGPT`](./assets/car.png){#fig-nanogpt style="max-height: 200px"}
 :::
 
+::: {.column}
+![`wordplay`](./assets/robot.png){#fig-wordplay style="max-height: 256px"}
+:::
+
+::::
 
 <details closed><summary>If you're curious...</summary>
 
