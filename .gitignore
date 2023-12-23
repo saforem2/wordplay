@@ -1,4 +1,5 @@
 # User added
+outputs/*
 *.DS_Store
 data/**/*.txt
 data/**/*.pkl
