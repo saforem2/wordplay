@@ -94,7 +94,6 @@ def train(cfg: DictConfig) -> Trainer:
     return trainer
 
 
-
 @hydra.main(version_base=None, config_path='./conf', config_name='config')
 def main(cfg: DictConfig) -> Trainer:
     return train(cfg)
