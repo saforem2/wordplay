@@ -355,7 +355,7 @@ class TrainConfig(BaseConfig):
     device: Optional[str] = None
     seed: Optional[int] = None
     port: Optional[str] = None
-    # ds_config_path: Optional[os.PathLike] = None
+    ds_config_path: Optional[str] = None
     # wandb_project_name: Optional[str] = None
     precision: Optional[str] = None
     ngpus: Optional[int] = None
