@@ -1,4 +1,7 @@
 # User added
+src/wordplay/logs/*
+cache/*
+.cache/*
 outputs/*
 *.DS_Store
 data/**/*.txt
