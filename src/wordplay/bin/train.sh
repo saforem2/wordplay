@@ -70,7 +70,7 @@ function setup() {
 }
 
 setup "$@"
-${EXEC}
+${EXEC} >> ${LOGFILE} 2>&1 &
 # ${EXEC} 2>&1 | tee -a "${LOGFILE}"
 # ${EXEC} >> ${LOGFILE} 2>&1 &
 # ${LAUNCH} python3 "${MAIN}" "$@" | tee -a "${LOGFILE}"

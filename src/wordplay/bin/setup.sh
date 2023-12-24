@@ -205,6 +205,7 @@ function setupJob() {
     if [[ $(hostname) == x3* ]]; then
         setupPolaris
     elif [[ $(hostname) == thetagpu* ]]; then
+        export DISABLE_PYMODULE_LOG=1
         setupThetaGPU
     elif [[ $(hostname) == nid* || $(hostname) == login* ]]; then
         setupPelmutter
