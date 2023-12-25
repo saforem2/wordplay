@@ -16,8 +16,11 @@ import os
 
 import hydra
 from pathlib import Path
-from omegaconf import OmegaConf
-from enrich import get_logger
+import json
+import logging
+# from omegaconf import OmegaConf
+from dataclasses import asdict
+# from enrich import get_logger
 # from ezpz import get_logger
 
 from hydra.utils import instantiate
@@ -27,8 +30,13 @@ from ezpz.dist import setup, setup_wandb
 
 from wordplay.configs import ExperimentConfig, PROJECT_ROOT
 from wordplay.trainer import Trainer
+try:
+    import wandb
+except (ImportError, ModuleNotFoundError):
+    wandb = None
 
-log = get_logger(__name__, "DEBUG")
+# log = get_logger(__name__, "DEBUG")
+log = logging.getLogger(__name__)
 
 
 def include_file(f) -> bool:
@@ -56,27 +64,21 @@ def build_trainer(cfg: DictConfig) -> Trainer:
         framework=cfg.train.framework,
         backend=cfg.train.backend,
         seed=cfg.train.seed,
-        # framework=config.train.framework,
-        # backend=config.train.backend,
-        # seed=config.train.seed
     )
     config: ExperimentConfig = instantiate(cfg)
     if rank != 0:
-        log.setLevel("CRITICAL")
-    # if rank == 0:
+        log.setLevel("ERROR")
     else:
         log.setLevel("DEBUG")
-        from rich import print_json
         if config.train.use_wandb:
             setup_wandb(
                 project_name=config.train.wandb_project,
                 config=cfg,
             )
-            if wandb.run is not None:
+            if wandb is not None and wandb.run is not None:
                 wandb.run.config['tokens_per_iter'] = config.tokens_per_iter
                 wandb.run.config['samples_per_iter'] = config.samples_per_iter
-        log.critical(OmegaConf.to_yaml(cfg))
-        print_json(config.to_json())
+        log.warning(json.dumps(asdict(config), indent=4))
     log.warning(f'Output dir: {os.getcwd()}')
     return Trainer(config)
 
@@ -84,13 +86,9 @@ def build_trainer(cfg: DictConfig) -> Trainer:
 def train(cfg: DictConfig) -> Trainer:
     trainer = build_trainer(cfg)
     trainer.train()
-    if wandb.run is not None:
+    if wandb is not None and wandb.run is not None:
         wandb.run.log_code(PROJECT_ROOT, include_fn=include_file)
-        # raw_module = trainer.model.module
-        # assert isinstance(raw_module, torch.nn.Module)
         trainer.save_ckpt(add_to_wandb=True)
-    # if rank == 0 and config.backend.lower() in ['ds', 'dspeed', 'deepspeed']:
-    #     git_ds_info()
     return trainer
 
 
