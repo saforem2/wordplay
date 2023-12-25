@@ -5,6 +5,7 @@ from __future__ import absolute_import, annotations, division, print_function
 from abc import ABC, abstractmethod
 from contextlib import nullcontext
 from copy import deepcopy
+import logging
 from dataclasses import asdict, dataclass
 import json
 import os
@@ -12,8 +13,8 @@ from pathlib import Path
 import pickle
 from typing import Any, Optional
 
-from enrich import get_logger
-from ezpz import get_rank, get_world_size
+# from enrich import get_logger
+from ezpz import get_rank, get_world_size, get_torch_device
 from hydra.core.config_store import ConfigStore
 import numpy as np
 import rich.repr
@@ -21,8 +22,8 @@ import tiktoken
 import torch
 # from transformers import data
 
-log = get_logger(__name__, 'INFO')
-# log = logging.getLogger(__name__)
+# log = get_logger(__name__, 'INFO')
+log = logging.getLogger(__name__)
 
 RANK = get_rank()
 WORLD_SIZE = get_world_size()
@@ -361,7 +362,7 @@ class TrainConfig(BaseConfig):
     ngpus: Optional[int] = None
     use_wandb: bool = True
     eval_interval: int = 2000
-    log_interval: int = 1
+    log_interval: int = 100
     eval_iters: int = 200
     eval_only: bool = False
     always_save_checkpoint: bool = True
@@ -369,8 +370,8 @@ class TrainConfig(BaseConfig):
     # wandb_log: bool = True
     wandb_project: str = 'WordPlay'
     # wandb_run_name: str = 'gpt2'
-    max_iters: int = 600000
-    warmup_iters: int = 2000
+    max_iters: int = 1000
+    warmup_iters: int = 200
     # backend: str = 'nccl'
     dtype: str = 'bfloat16'
     compile: bool = True
@@ -383,6 +384,16 @@ class TrainConfig(BaseConfig):
             f'dtype-{self.dtype}',
             f'init-{self.init_from}',
         ])
+
+    def __post_init__(self):
+        if self.max_iters < self.log_interval:
+            logint0 = self.log_interval
+            self.log_interval = max(1, (self.max_iters // 20))
+            log.warning(
+                f"{self.max_iters} < {logint0}! "
+                "Updating 'log_interval' from: "
+                f"{logint0} to {self.log_interval}"
+            )
 
 
 @dataclass
@@ -417,7 +428,8 @@ class ExperimentConfig(BaseConfig):
             )
         # self._out_dir = Path(self.data.out_dir)
         # self._out_dir.mkdir(parents=True, exist_ok=True)
-        self.device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # self.device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device_type = get_torch_device()
         self.ptdtype = PT_DTYPES[self.train.dtype]
         # self.device_type == 'cpu'
         self.ctx = (
