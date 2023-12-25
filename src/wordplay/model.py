@@ -20,6 +20,7 @@ https://github.com/huggingface/transformers/blob/main/src/transformers/models/gp
 import math
 import inspect
 # from dataclasses import dataclass
+import logging
 
 import torch
 import torch.nn as nn
@@ -27,10 +28,10 @@ from torch.nn import functional as F
 
 from wordplay.configs import ModelConfig
 from ezpz import get_rank
-from enrich import get_logger
+# from enrich import get_logger
 
-
-log = get_logger(__name__, "INFO")
+# log = get_logger(__name__, "INFO")
+log = logging.getLogger(__name__)
 
 RANK = get_rank()
 if RANK == 0:
