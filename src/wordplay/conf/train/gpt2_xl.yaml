@@ -2,7 +2,7 @@ _target_: wordplay.configs.TrainConfig
 
 framework: pytorch          # ML framework to use: one of 'pytorch', 'tensorflow'
 backend: 'DDP'              # Backend to use for distributed training
-# ds_config_path: null
+ds_config_path: null
 device: null
 port: null
 seed: null
@@ -16,7 +16,7 @@ eval_iters: 200
 eval_only: false
 always_save_checkpoint: false
 init_from: scratch
-max_iters: 50000
+max_iters: 10000
 warmup_iters: 2000
 dtype: bfloat16
 compile: true

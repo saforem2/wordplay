@@ -1,86 +1,42 @@
 """
-This training script can be run both on a single gpu in debug mode,
-and also in a larger training run with distributed data parallel (ddp).
+wordplay/trainer.py
 
-To run on a single GPU, example:
-$ python train.py --batch_size=32 --compile=False
-
-To run with DDP on 4 gpus on 1 node, example:
-$ torchrun --standalone --nproc_per_node=4 train.py
-
-To run with DDP on 4 gpus across 2 nodes, example:
-- Run on the first (master) node with example IP 123.456.123.456:
-$ torchrun --nproc_per_node=8 --nnodes=2 --node_rank=0 --master_addr=123.456.123.456 --master_port=1234 train.py
-- Run on the worker node:
-$ torchrun --nproc_per_node=8 --nnodes=2 --node_rank=1 --master_addr=123.456.123.456 --master_port=1234 train.py
-(If your cluster does not have Infiniband interconnect prepend NCCL_IB_DISABLE=1)
+```markdown
+> [!NOTE]
+>  If your cluster does not have Infiniband interconnect, prepend:
+>  `NCCL_IB_DISABLE=1`
+```
 """
 from __future__ import absolute_import, annotations, division, print_function
-from os import PathLike
-
-import os
-import wandb
-# import logging
-from typing import Any, Optional, Union
-import time
-import math
-from pathlib import Path
 from dataclasses import asdict
-# from enrich.console import get_console
+import logging
+import math
+from os import PathLike
+import os
+from pathlib import Path
+import time
+from typing import Any, Optional, Union
 
-import numpy as np
-import torch
-from torch.cuda.amp.grad_scaler import GradScaler
-from torch.nn.parallel import DistributedDataParallel as DDP
-# import logging
-
-from wordplay.model import GPT
-from rich.text import Text
-from enrich import get_logger
-# from wordplay import get_logger
+from ezpz import get_rank, get_torch_device, get_world_size, timeitlogit
 from ezpz.history import BaseHistory
-from ezpz import get_rank, get_world_size
+import numpy as np
+from rich.text import Text
+import torch
+from torch.nn.parallel import DistributedDataParallel as DDP
+from tqdm import trange
+import wandb
+
 from wordplay.configs import ExperimentConfig, ModelConfig, add_to_ckpts_file
-
-from tqdm.auto import trange
-# if is_interactive():
-#     from tqdm.notebook import trange
-# else:
-#     from tqdm.auto import trange
-# from tqdm.autonotebook import trange
-# from tqdm import tqdm
-# from tqdm import trange
+from wordplay.model import GPT
 
 
-
-log = get_logger(__name__, level="INFO")
-# log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 RANK = get_rank()
 WORLD_SIZE = get_world_size()
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
 ScalarLike = Union[float, int, np.floating, bool]
-
-
-# class TqdmLoggingHandler(logging.StreamHandler):
-#     """Avoid tqdm progress bar interruption by logger's output to console"""
-#     # see logging.StreamHandler.eval method:
-#     # https://github.com/python/cpython/blob/d2e2534751fd675c4d5d3adc208bf4fc984da7bf/Lib/logging/__init__.py#L1082-L1091
-#     # and tqdm.write method:
-#     # https://github.com/tqdm/tqdm/blob/f86104a1f30c38e6f80bfd8fb16d5fcde1e7749f/tqdm/std.py#L614-L620
-#
-#     def emit(self, record):
-#         try:
-#             msg = self.format(record)
-#             tqdm.write(msg, end=self.terminator)
-#         except RecursionError:
-#             raise
-#         except Exception:
-#             self.handleError(record)
-
-
-# log.addHandler(TqdmLoggingHandler())
 
 
 def format_pair(k: str, v: ScalarLike) -> str:
@@ -164,6 +120,10 @@ class Trainer:
         # self.console = get_console()
         self.config = config
         self.ckpt = None
+        self.rank = RANK
+        self.world_size = WORLD_SIZE
+        self.device = DEVICE
+        # assert self.device == self.config.device_type
         # NOTE: ---------------------------------------------------------
         # config.optimizer.gas = (
         #     1 if config.optimizer.gradient_accumulation_steps is None
@@ -184,30 +144,26 @@ class Trainer:
             self.config.set_iter_num(ckpt.get('iter_num', 0))
             self.config.set_best_val_loss(ckpt.get('best_val_loss', 1e9))
         elif self.config.train.init_from.startswith('gpt2'):
-            log.info(f'Initializing from OpenAI GPT-2 Weights: {self.config.train.init_from}')
-            override_args = {'dropout': self.config.model.dropout}
-            model = GPT.from_pretrained(self.config.train.init_from, override_args)
-            model_cfg = {}
-            for k in ['n_layer', 'n_head', 'n_embd', 'block_size', 'bias', 'vocab_size']:
-                model_cfg[k] = getattr(model.config, k)
-            self.config.reset_model_config(ModelConfig(**model_cfg))
+            model = self._init_gpt2()
         else:
-            raise ValueError(f'Unexpected `init_from` = {self.config.train.init_from}. Exiting!')
-        self.model = model
-        if torch.cuda.is_available():
-            self.model.cuda()
-        assert isinstance(self.model, GPT)
+            raise ValueError(
+                f'Unexpected `init_from` = {self.config.train.init_from}. '
+                'Exiting!'
+            )
+        # model = model
+        # if torch.cuda.is_available():
+        #     model.cuda()
+        model.to(self.device)
+        assert isinstance(model, GPT)
         assert issubclass(GPT, torch.nn.Module)
-        num_params = self.model.get_num_params()
+        num_params = model.get_num_params()
         if wandb.run is not None:
             wandb.run.config['num_params'] = num_params
         # model_block_size = int(self.model.config.block_size)
-        if self.config.model.block_size < self.model.config.block_size:
-            self.model.crop_block_size(self.config.model.block_size)
+        if self.config.model.block_size < model.config.block_size:
+            model.crop_block_size(self.config.model.block_size)
             self.config.model.set_block_size(self.config.model.block_size)
-        # self.model.to(self.config.device)
-        self.scaler = GradScaler(enabled=(self.config.train.dtype == 'float16'))
-        self.optimizer = self.model.configure_optimizers(
+        optimizer = model.configure_optimizers(
             weight_decay=self.config.optimizer.weight_decay,
             learning_rate=self.config.optimizer.learning_rate,
             betas=(
@@ -222,16 +178,137 @@ class Trainer:
                 and isinstance(self.ckpt, dict)
                 and 'optimizer' in self.ckpt
             )
-            self.optimizer.load_state_dict(self.ckpt['optimizer'])
+            optimizer.load_state_dict(self.ckpt['optimizer'])
             self.ckpt = None  # free up memory
         if self.config.train.compile:
             # unoptimized_model = self.model
-            self.model = torch.compile(model)
+            model = torch.compile(model)  # type:ignore
         # if WORLD_SIZE > 1:
-        self.model = DDP(model)  # , device_ids=get_local_rank())
+        grad_scaler = None
+        if self.config.train.backend.lower() == 'ddp':
+            if torch.cuda.is_available():
+                from torch.cuda.amp.grad_scaler import GradScaler
+                grad_scaler = GradScaler(
+                    enabled=(self.config.train.dtype == 'float16')
+                )
+            # self.optimizer = optimizer
+            assert isinstance(model, torch.nn.Module)
+            model_engine = DDP(model)  # , device_ids=get_local_rank())
+        elif self.config.train.backend.lower() in ['deepspeed', 'ds']:
+            from ezpz import load_ds_config
+            grad_scaler = None
+            ds_config_path = self.config.train.ds_config_path
+            if ds_config_path is None:
+                from wordplay.configs import DS_CONFIG_PATH
+                ds_config_path = DS_CONFIG_PATH
+            self.ds_config = load_ds_config(ds_config_path)
+            if 'optimizer' in self.ds_config.keys():
+                optimizer = None
+            assert isinstance(model, torch.nn.Module)
+            ds_out = self._setup_deepspeed(
+                ds_config=self.ds_config,
+                model=model,
+                optimizer=optimizer
+            )
+            model_engine = ds_out['model_engine']
+            optimizer = ds_out['optimizer']
+        else:
+            raise ValueError(f'Unexpected {self.config.train.backend=}')
+        self.model = model
+        self.grad_scaler = grad_scaler
+        self.model_engine = model_engine
+        self.optimizer = optimizer
+
+    def _init_gpt2(self) -> GPT:
+        log.info(
+            f'Initializing from OpenAI GPT-2 Weights: '
+            f'{self.config.train.init_from}'
+        )
+        override_args = {'dropout': self.config.model.dropout}
+        model = GPT.from_pretrained(
+            self.config.train.init_from,
+            override_args
+        )
+        model_cfg = {}
+        for k in [
+                'n_layer',
+                'n_head',
+                'n_embd',
+                'block_size',
+                'bias',
+                'vocab_size'
+        ]:
+            model_cfg[k] = getattr(model.config, k)
+        self.config.reset_model_config(ModelConfig(**model_cfg))
+        return model
+
+    def _setup_deepspeed(
+            self,
+            model: Optional[torch.nn.Module | GPT],
+            ds_config: Optional[dict] = None,
+            ds_config_path: Optional[os.PathLike] = None,
+            optimizer: Optional[torch.optim.Optimizer] = None,
+    ) -> dict:
+        """Setup DeepSpeed.
+
+        TODO:
+            - [ ] Deal with / fix gradient accumulation logic in `train_step`
+            - [ ] Test / generalize optimizer creation
+        """
+        import deepspeed
+        from ezpz import load_ds_config
+        if ds_config is None:
+            assert ds_config_path is not None, (
+                'One of `ds_config` or `ds_config_path` must be specified.'
+            )
+            ds_config = load_ds_config(Path(ds_config_path).as_posix())
+        assert ds_config is not None
+        if self.config.train.wandb_project is not None:
+            ds_config['wandb'].update({
+                'enabled': True,
+                'project': self.config.train.wandb_project,
+            })
+        log.warning(
+            f'Setting `train_micro_batch_size_per_gpu` to '
+            f'{self.config.model.batch_size=}'
+        )
+        ds_config.update({
+            'train_micro_batch_size_per_gpu': self.config.model.batch_size
+        })
+        assert (
+            model is not None and (
+                isinstance(model, (torch.nn.Module, GPT))
+                or issubclass(model, torch.nn.Module)
+            )
+        )
+        assert model is not None
+        if (
+                optimizer is not None
+                and isinstance(optimizer, torch.optim.Optimizer)
+        ):
+            engine, optimizer, *_ = deepspeed.initialize(
+                model=model,
+                config=ds_config,
+                optimizer=optimizer,
+            )
+        elif 'optimizer' in ds_config.keys():
+            engine, optimizer, *_ = deepspeed.initialize(
+                model=model,
+                config=ds_config,
+                model_parameters=model.parameters()
+            )
+        else:
+            raise ValueError('Unable to initialize DeepSpeed')
+        assert engine is not None and optimizer is not None
+        return {
+            'model_engine': engine,
+            'optimizer': optimizer,
+            'ds_config': ds_config,
+        }
 
     def get_batch(self, split: str) -> tuple[torch.Tensor, torch.Tensor]:
-        # data = self.config.train_data if split == 'train' else self.config.val_data
+        # data = self.config.train_data if split == 'train'
+        # else self.config.val_data
         data = self.config.data.data.get(split, None)
         assert data is not None
         ix = torch.randint(
@@ -278,7 +355,7 @@ class Trainer:
             for k in range(self.config.train.eval_iters):
                 x, y = self.get_batch(split)
                 with self.config.ctx:
-                    _, loss = self.model(x, y)
+                    _, loss = self.model_engine(x, y)
                 losses[k] = loss.item()
             out[split] = losses.mean()
         self.model.train()
@@ -289,14 +366,20 @@ class Trainer:
             ckpt_dir: Optional[str | PathLike] = None
     ) -> tuple[torch.nn.Module, dict]:
         log.info(f'Resuming training from {self.config.data.out_dir}')
-        ckpt_dir = str(self.config.data.out_dir) if ckpt_dir is None else ckpt_dir
+        ckpt_dir = (
+            str(self.config.data.out_dir) if ckpt_dir is None
+            else ckpt_dir
+        )
         assert ckpt_dir is not None
         ckpt_path = Path(ckpt_dir).joinpath('ckpt.pt')
-        checkpoint = torch.load(ckpt_path, map_location=self.config.train.device)
+        checkpoint = torch.load(
+            ckpt_path,
+            map_location=self.config.train.device
+        )
         ckpt_model = checkpoint['model_args']
         model_config = ModelConfig(
             n_layer=ckpt_model['n_layer'],
-            n_head=ckpt_model['n_head'], 
+            n_head=ckpt_model['n_head'],
             n_embd=ckpt_model['n_embd'],
             block_size=ckpt_model['block_size'],
             bias=ckpt_model['bias'],
@@ -314,7 +397,7 @@ class Trainer:
     def _forward_step(self, x: torch.Tensor, y: torch.Tensor) -> dict:
         t0 = time.perf_counter()
         with self.config.ctx:
-            logits, loss = self.model(x, y)
+            logits, loss = self.model_engine(x, y)
         return {
             'logits': logits,
             'loss': loss,
@@ -327,17 +410,24 @@ class Trainer:
             propagate_grads: bool = False,
     ) -> float:
         t0 = time.perf_counter()
-        self.scaler.scale(loss).backward()  # pyright: ignore
-        if propagate_grads:
-            if self.config.optimizer.grad_clip != 0.0:
-                self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(  # pyright: ignore
-                    self.model.parameters(),
-                    self.config.optimizer.grad_clip
-                )
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
-            self.optimizer.zero_grad(set_to_none=True)
+        if self.config.train.backend.lower() in ['ds', 'deepspeed']:
+            self.model_engine.backward(loss)  # type:ignore
+            self.model_engine.step(loss)      # type:ignore
+        else:
+            if self.grad_scaler is not None:
+                self.grad_scaler.scale(loss).backward()  # type:ignore
+            if propagate_grads:
+                if self.config.optimizer.grad_clip != 0.0:
+                    if self.grad_scaler is not None:
+                        self.grad_scaler.unscale_(self.optimizer)
+                    torch.nn.utils.clip_grad_norm_(  # pyright: ignore
+                        self.model_engine.parameters(),
+                        self.config.optimizer.grad_clip
+                    )
+                if self.grad_scaler is not None:
+                    self.grad_scaler.step(self.optimizer)
+                    self.grad_scaler.update()
+                    self.optimizer.zero_grad(set_to_none=True)
 
         return time.perf_counter() - t0
 
@@ -366,17 +456,22 @@ class Trainer:
             # forces us to repeat code looking at the source of that context
             # manager, it just toggles this variable
             # -----------------------------------------------------------------
-            _ = (
-                self.model.require_backward_grad_sync
-                if (is_last_micro_step and WORLD_SIZE > 1)
-                else None
-            )
+            if self.config.train.backend.lower() == 'ddp':
+                _ = (
+                    self.model_engine.require_backward_grad_sync
+                    if (is_last_micro_step and self.world_size > 1)
+                    else None
+                )
             fout = self._forward_step(x, y)
-            # immediately async prefetch next batch while model is doing the forward pass on the GPU
+            # immediately async prefetch next batch while model is doing the
+            # forward pass on the GPU
             x, y = self.get_batch('train')
             loss = fout['loss'] / self._gas
             dtf.append(fout['dt'])
-            dtb_ = self._backward_step(loss, propagate_grads=is_last_micro_step)
+            dtb_ = self._backward_step(
+                loss,
+                propagate_grads=is_last_micro_step
+            )
             dtb.append(dtb_)
             dt.append(dtf + dtb)
         timers = {
@@ -410,12 +505,12 @@ class Trainer:
             add_to_wandb: bool = False
     ):
         if raw_model is None:
-            model = self.model.module  # type:ignore
+            model = self.model
         else:
             model = raw_model  # type:ignore
         assert model is not None
-        assert isinstance(model, GPT)
-        assert issubclass(GPT,  torch.nn.Module)
+        assert isinstance(model, torch.nn.Module)
+        # assert issubclass(GPT,  torch.nn.Module)
         ckpt = {
             'model': model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
@@ -441,6 +536,7 @@ class Trainer:
             artifact.add_file(modelfile.as_posix())
             wandb.run.log_artifact(artifact)
 
+    @timeitlogit(rank=RANK, verbose=(RANK != 0))
     def train(
             self,
             train_iters: Optional[int] = None,
@@ -448,8 +544,8 @@ class Trainer:
         x, y = self.get_batch('train')
         t0 = time.perf_counter()
         # local_iter_num = 0
-        raw_model = self.model.module  #  if WORLD_SIZE > 1 else self.model
-        assert isinstance(raw_model, GPT)
+        # raw_model = self.model.module  #  if WORLD_SIZE > 1 else self.model
+        # assert isinstance(raw_model, GPT)
         running_mfu = -1.0
         output = {'x': x, 'y': y}
         t0 = time.perf_counter()
@@ -460,12 +556,15 @@ class Trainer:
         )
         for train_iter in trange(
                 train_iters,
-                disable=(RANK != 0),
+                disable=(self.rank != 0),
                 total=train_iters,
         ):
             if self.config.iter_num == 0 and self.config.train.eval_only:
                 return
-            if self.config.iter_num % self.config.train.eval_interval == 0 and RANK == 0:
+            if (
+                    self.config.iter_num % self.config.train.eval_interval == 0
+                    and self.rank == 0
+            ):
                 losses = self.estimate_loss()
                 if (
                     self.config.iter_num > 0
@@ -493,11 +592,14 @@ class Trainer:
             zero = torch.tensor(0.0)
             if (
                     self.config.iter_num % self.config.train.log_interval == 0
-                    and (RANK == 0)
+                    and (self.rank == 0)
             ):
                 if train_iter >= 5:
-                    mfu = raw_model.estimate_mfu(
-                        (self.config.model.batch_size * self.config.optimizer.gas),
+                    mfu = self.model.estimate_mfu(
+                        (
+                            self.config.model.batch_size
+                            * self.config.optimizer.gas
+                        ),
                         dt=dt
                     )
                     running_mfu = (
@@ -554,7 +656,7 @@ class Trainer:
             self,
             s: str,
             num_samples: int = 10,
-            max_new_tokens = 500,
+            max_new_tokens: int = 500,
             temperature: float = 0.8,
             top_k: int = 200,
             display: Optional[bool] = True,
@@ -566,7 +668,11 @@ class Trainer:
         outputs = {}
         with torch.no_grad():
             start_ids = self.config.data.encode(s)
-            x = (torch.tensor(start_ids, dtype=torch.long, device=DEVICE)[None, ...])
+            x = torch.tensor(
+                    start_ids,
+                    dtype=torch.long,
+                    device=self.device,
+            )[None, ...]
             for idx in range(num_samples):
                 y = self.model.module.generate(
                     x,

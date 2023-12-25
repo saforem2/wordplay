@@ -77,7 +77,7 @@ function setupThetaGPU() {
         NHOSTS=$(wc -l < "${HOSTFILE}")
         NGPU_PER_HOST=$(nvidia-smi -L | wc -l)
         NGPUS=$((NHOSTS * NGPU_PER_HOST))
-        LAUNCH="mpirun -n $NGPUS -N $NGPU_PER_HOST --hostfile $HOSTFILE -x PATH -x LD_LIBRARY_PATH"
+        LAUNCH="mpirun -n $NGPUS -N $NGPU_PER_HOST --hostfile $HOSTFILE -x PATH -x LD_LIBRARY_PATH -x https_proxy -x http_proxy -x HTTPS_PROXY -x HTTP_PROXY"
     else
         echo "[setupThetaGPU]: Unexpected hostname $(hostname)"
     fi
