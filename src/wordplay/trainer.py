@@ -17,7 +17,13 @@ from pathlib import Path
 import time
 from typing import Any, Optional, Union
 
-from ezpz import get_rank, get_torch_device, get_world_size, timeitlogit
+from ezpz import (
+    get_rank,
+    get_torch_device,
+    get_world_size,
+    timeitlogit,
+    get_local_rank
+)
 from ezpz.history import BaseHistory
 import numpy as np
 from rich.text import Text
@@ -193,7 +199,12 @@ class Trainer:
                 )
             # self.optimizer = optimizer
             assert isinstance(model, torch.nn.Module)
-            model_engine = DDP(model)  # , device_ids=get_local_rank())
+            device = get_torch_device()
+            local_rank = get_local_rank()
+            devid = f"{device}:{local_rank}"
+            log.critical(f'"{devid=}"')
+            model.to(devid)
+            model_engine = DDP(model, device_ids=[devid])
         elif self.config.train.backend.lower() in ['deepspeed', 'ds']:
             from ezpz import load_ds_config
             grad_scaler = None
