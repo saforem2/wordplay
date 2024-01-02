@@ -22,6 +22,12 @@ import logging
 from dataclasses import asdict
 # from enrich import get_logger
 # from ezpz import get_logger
+import torch
+try:
+    import intel_extension_for_pytorch
+    import oneccl_bindings_for_pytorch
+except (ModuleNotFoundError, ImportError):
+    pass
 
 from hydra.utils import instantiate
 from omegaconf.dictconfig import DictConfig
@@ -59,7 +65,7 @@ def include_file(f) -> bool:
     return (exclude_ and include_)
 
 
-def build_trainer(cfg: DictConfig) -> Trainer:
+def setup_training(cfg: DictConfig) -> ExperimentConfig:
     rank = setup(
         framework=cfg.train.framework,
         backend=cfg.train.backend,
@@ -80,11 +86,16 @@ def build_trainer(cfg: DictConfig) -> Trainer:
                 wandb.run.config['samples_per_iter'] = config.samples_per_iter
         log.warning(json.dumps(asdict(config), indent=4))
     log.warning(f'Output dir: {os.getcwd()}')
+    return config
+
+
+def build_trainer(config: ExperimentConfig) -> Trainer:
     return Trainer(config)
 
 
 def train(cfg: DictConfig) -> Trainer:
-    trainer = build_trainer(cfg)
+    config: ExperimentConfig = setup_training(cfg)
+    trainer = build_trainer(config)
     trainer.train()
     if wandb is not None and wandb.run is not None:
         wandb.run.log_code(PROJECT_ROOT, include_fn=include_file)
