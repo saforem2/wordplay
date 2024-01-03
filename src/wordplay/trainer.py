@@ -50,7 +50,7 @@ def format_pair(k: str, v: ScalarLike) -> str:
         # return f'{k}={v:<3}'
         return f'{k}={v}'
     # return f'{k}={v:<3.4f}'
-    return f'{k}={v:<.3f}'
+    return f'{k}={v:<6.4f}'
 
 
 def summarize_dict(d: dict) -> str:
@@ -554,9 +554,6 @@ class Trainer:
     ):
         x, y = self.get_batch('train')
         t0 = time.perf_counter()
-        # local_iter_num = 0
-        # raw_model = self.model.module  #  if WORLD_SIZE > 1 else self.model
-        # assert isinstance(raw_model, GPT)
         running_mfu = -1.0
         output = {'x': x, 'y': y}
         t0 = time.perf_counter()
@@ -621,6 +618,8 @@ class Trainer:
                     'step': self.config.iter_num,
                     'loss': lossf,
                     'dt': dt * 1000,
+                    'dtf': output['timers']['dtf_avg'] * 1000,
+                    'dtb': output['timers']['dtb_avg'] * 1000,
                     'sps': samples_per_sec,
                     'mtps': tokens_per_sec / int(1e6),
                     'mfu': running_mfu * 100,
