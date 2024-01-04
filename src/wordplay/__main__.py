@@ -95,7 +95,8 @@ def build_trainer(config: ExperimentConfig) -> Trainer:
 
 def train(cfg: DictConfig) -> Trainer:
     config: ExperimentConfig = setup_training(cfg)
-    trainer = build_trainer(config)
+    # trainer = build_trainer(config)
+    trainer = Trainer(config)
     trainer.train()
     if wandb is not None and wandb.run is not None:
         wandb.run.log_code(PROJECT_ROOT, include_fn=include_file)
@@ -109,6 +110,9 @@ def main(cfg: DictConfig) -> Trainer:
 
 
 if __name__ == '__main__':
+    import time
+    t0 = time.perf_counter()
+    os.environ['START_TIME'] = f'{t0}'
     import wandb
     rank = main()
     if wandb.run is not None:

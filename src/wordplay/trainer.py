@@ -567,6 +567,16 @@ class Trainer:
                 disable=(self.rank != 0),
                 total=train_iters,
         ):
+            if self.config.iter_num == 0:
+                start_time = os.environ.get('START_TIME', None)
+                if start_time is not None:
+                    startup_time = time.perf_counter() - float(start_time)
+                    log.info(f'Startup time: {startup_time:.4f}')
+                    if wandb is not None and wandb.run is not None:
+                        wandb.run.log(
+                            {'Timing/startup_time': startup_time},
+                            commit=False
+                        )
             if self.config.iter_num == 0 and self.config.train.eval_only:
                 return
             if (
