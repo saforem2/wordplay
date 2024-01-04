@@ -137,6 +137,8 @@ recent work on LLMs.
 
 ## Completed
 
+
+- [x] [DeepSpeed](https://deepspeed.ai/) support (✅: 2024-01-03)
 - [x] Work with *any* 🤗 HuggingFace
   [dataset](https://huggingface.co/docs/datasets/index)
 - [x] Effortless distributed training using
@@ -154,7 +156,6 @@ recent work on LLMs.
 
 ## In Progress
 
-- [ ] [DeepSpeed](https://deepspeed.ai/) support
 - [ ] [Full-Sharded Data-Parallel
   (FSDP)](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/)
   support
