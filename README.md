@@ -43,7 +43,7 @@ Karpathy's `nanoGPT` has now grown into the `wordplay` project.
 <!-- on 🤗 HuggingFace. -->
 <!-- ::: -->
 
-<div id="fig-compare" layout-valign="bottom"
+<!--<div id="fig-compare" layout-valign="bottom"
 style="display: flex; align-items: flex-end;">
 
 <table style="width:100%;">
@@ -79,6 +79,7 @@ data-fig.extended="false" width="150" alt="(b) wordplay" /></p>
 Figure 1: Imagine `nanoGPT`, with *all* the add-ons.
 
 </div>
+-->
 
 <details closed>
 <summary>
