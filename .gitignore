@@ -1,4 +1,7 @@
 # User added
+**old**
+src/logs/*
+src/outputs/*
 src/wordplay/logs/*
 cache/*
 .cache/*
