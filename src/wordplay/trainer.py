@@ -18,14 +18,15 @@ import time
 from typing import Any, Optional, Union
 
 from ezpz import (
+    get_local_rank,
     get_rank,
     get_torch_device,
     get_world_size,
-    timeitlogit,
-    get_local_rank
+    timeitlogit
 )
 from ezpz.history import BaseHistory
 import numpy as np
+from rich.table import Table
 from rich.text import Text
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -43,6 +44,50 @@ WORLD_SIZE = get_world_size()
 DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
 ScalarLike = Union[float, int, np.floating, bool]
+
+
+def print_legend(verbose: bool = True) -> Table:
+    legend = {
+        "step": "Current training iteration",
+        "loss": "Loss value",
+        "dt": "Elapsed time per training step (measured in **ms**)",
+        "dtf": "Elapsed time per forward step (measured in **ms**)",
+        "dtb": "Elapsed time per backward step (measured in **ms**)",
+        "sps": "Samples per second",
+        "mtps": "Tokens per second, measured in MEGA (1 x 10^6) tokens / sec",
+        "mfu": "Model flops utilization",
+        "train_loss": "Training loss value",
+        "val_loss": "Validation loss value",
+    }
+    table = Table(title='Training Legend')
+    table.add_column('abbr', justify='center', style='green')
+    table.add_column('desc', justify='left')
+    for key, val in legend.items():
+        table.add_row(f'{key}', f'{val}')
+    if verbose and RANK == 0:
+        from rich import print
+        print(table)
+    return table
+
+
+def markdown_legend() -> None:
+    from rich.markdown import Markdown
+    from rich import print
+    text = """
+    | name | description |
+    | :--: | ---- |
+    | `step` | Current training iteration |
+    | `loss` | Loss value |
+    | `dt` | Elapsed time per training step (measured in **ms**) |
+    | `dtf` | Elapsed time per forward step (measured in **ms**) |
+    | `dtb` | Elapsed time per backward step (measured in **ms**) |
+    | `sps` | Samples per second |
+    | `mtps` | Tokens per second, measured in MEGA (1 x 10^6) tokens / sec  |
+    | `mfu` | Model flops utilization |
+    | `train_loss` | Training loss value |
+    | `val_loss` | Validation loss value |
+    """
+    print(Markdown(text))
 
 
 def format_pair(k: str, v: ScalarLike) -> str:
@@ -147,7 +192,7 @@ class Trainer:
         elif self.config.train.init_from == 'resume':
             model, ckpt = self.restore_from_ckpt()
             self.ckpt = ckpt
-            self.config.set_iter_num(ckpt.get('iter_num', 0))
+            self.config.set_iter_num(ckpt.get('iter_num', 1))
             self.config.set_best_val_loss(ckpt.get('best_val_loss', 1e9))
         elif self.config.train.init_from.startswith('gpt2'):
             model = self._init_gpt2()
@@ -164,6 +209,7 @@ class Trainer:
         assert issubclass(GPT, torch.nn.Module)
         num_params = model.get_num_params()
         if wandb.run is not None:
+            wandb.watch(model)
             wandb.run.config['num_params'] = num_params
         # model_block_size = int(self.model.config.block_size)
         if self.config.model.block_size < model.config.block_size:
@@ -515,10 +561,10 @@ class Trainer:
             raw_model: Optional[torch.nn.Module | GPT] = None,
             add_to_wandb: bool = False
     ):
-        if raw_model is None:
-            model = self.model
-        else:
+        if raw_model is not None:
             model = raw_model  # type:ignore
+        else:
+            model = self.model
         assert model is not None
         assert isinstance(model, torch.nn.Module)
         # assert issubclass(GPT,  torch.nn.Module)
@@ -577,6 +623,8 @@ class Trainer:
                             {'Timing/startup_time': startup_time},
                             commit=False
                         )
+                _ = print_legend()
+                # markdown_legend()
             if self.config.iter_num == 0 and self.config.train.eval_only:
                 return
             if (
@@ -646,9 +694,6 @@ class Trainer:
                     }
                     losses['lossf'] = lossf
                     losses['iter'] = self.config.iter_num
-                    # wbmetrics = {
-                    #     f'training/{k}': v for k, v in metrics.items()
-                    # }
                     wbmetrics = {
                         f'Training/{k}': (
                             (wandb.Histogram(v.tolist())
