@@ -34,7 +34,7 @@ from omegaconf.dictconfig import DictConfig
 
 from ezpz.dist import setup, setup_wandb
 
-from wordplay.configs import ExperimentConfig, PROJECT_ROOT
+from wordplay.configs import HERE, ExperimentConfig, PROJECT_ROOT
 from wordplay.trainer import Trainer
 try:
     import wandb
@@ -99,7 +99,7 @@ def train(cfg: DictConfig) -> Trainer:
     trainer = Trainer(config)
     trainer.train()
     if wandb is not None and wandb.run is not None:
-        wandb.run.log_code(PROJECT_ROOT, include_fn=include_file)
+        # wandb.run.log_code(HERE, include_fn=include_file)
         trainer.save_ckpt(add_to_wandb=True)
     return trainer
 
