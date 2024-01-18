@@ -46,7 +46,7 @@ DATA_DIR = PROJECT_DIR.joinpath('data')
 CKPT_DIR = HERE.joinpath('ckpts')
 DS_CONFIG_PATH = CONF_DIR.joinpath('ds_config.yaml')
 LOGS_DIR = HERE.joinpath('logs')
-OUTPUTS_DIR = HERE.joinpath('outputs')
+OUTPUTS_DIR = HERE.parent.joinpath('outputs')
 
 OUTDIRS_FILE = OUTPUTS_DIR.joinpath('outdirs.log')
 CKPTS_FILE = CKPT_DIR.joinpath('checkpoints.log')
