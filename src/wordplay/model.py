@@ -26,7 +26,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from wordplay.configs import ModelConfig
+from wordplay.configs import GPTModelConfig
 from ezpz import get_rank
 # from enrich import get_logger
 
@@ -63,7 +63,7 @@ class LayerNorm(nn.Module):
 
 
 class CausalSelfAttention(nn.Module):
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: GPTModelConfig):
         super().__init__()
         assert config.n_embd % config.n_head == 0
         # key, query, value projections for all heads, but in a batch
@@ -155,16 +155,37 @@ class CausalSelfAttention(nn.Module):
         return y
 
 
+ACTIVATIONS = {
+    'gelu': nn.GELU(),
+    'swiglu': nn.SiLU(),
+    'relu': nn.ReLU(),
+}
+
+
 class MLP(nn.Module):
 
-    def __init__(self, config: ModelConfig):
+    def __init__(
+            self,
+            config: GPTModelConfig,
+            activation: str = 'gelu',
+    ):
         super().__init__()
         self.c_fc = nn.Linear(
             config.n_embd,
             4 * config.n_embd,
             bias=config.bias
         )
-        self.gelu = nn.GELU()
+        if activation.lower() in ACTIVATIONS:
+            self.act_fn = ACTIVATIONS[activation.lower()]
+        else:
+            try:
+                act_fn = getattr(nn, activation)
+                assert callable(act_fn)
+                self.act_fn = act_fn()
+            except Exception as exc:
+                log.error(f'{activation} not yet supported!')
+                raise exc
+        # self.gelu = nn.GELU()
         self.c_proj = nn.Linear(
             4 * config.n_embd,
             config.n_embd,
@@ -174,7 +195,8 @@ class MLP(nn.Module):
 
     def forward(self, x):
         x = self.c_fc(x)
-        x = self.gelu(x)
+        # x = self.gelu(x)
+        x = self.act_fn(x)
         x = self.c_proj(x)
         x = self.dropout(x)
         return x
@@ -182,7 +204,7 @@ class MLP(nn.Module):
 
 class Block(nn.Module):
 
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: GPTModelConfig):
         super().__init__()
         self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
         self.attn = CausalSelfAttention(config)
@@ -196,7 +218,7 @@ class Block(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: GPTModelConfig):
         super().__init__()
         assert config.vocab_size is not None
         assert config.block_size is not None
@@ -311,12 +333,9 @@ class GPT(nn.Module):
         )
         for block in self.transformer.h:   # type:ignore
             if hasattr(block.attn, 'bias'):
-                block.attn.bias = block.attn.bias[
-                    :,
-                    :,
-                    :block_size,
-                    :block_size
-                ]
+                block.attn.bias = (
+                    block.attn.bias[:, :, :block_size, :block_size]
+                )
 
     @classmethod
     def from_pretrained(cls, model_type, override_args=None):
@@ -325,14 +344,15 @@ class GPT(nn.Module):
         # only dropout can be overridden see more notes below
         assert all(k == 'dropout' for k in override_args)
         from transformers import GPT2LMHeadModel
-        log.info("loading weights from pretrained gpt: %s" % model_type)
-
+        log.info(f"loading weights from pretrained gpt: {model_type=}")
         # n_layer, n_head and n_embd are determined from model_type
         # gpt2: 124M params
         # gpt2-medium: 350M params
         # gpt2-large: 774M params
         # gpt2-xl: 1558M params
         config_args = {
+            # 'baby-llama2': dict(n_layer=16, n_head=16, n_embed=1024),
+            # 'llama2-7b': dict(n_layer=32, n_head=32, n_embd=4096),
             'gpt2': dict(n_layer=12, n_head=12, n_embd=768),
             'gpt2-medium': dict(n_layer=24, n_head=16, n_embd=1024),
             'gpt2-large': dict(n_layer=36, n_head=20, n_embd=1280),
@@ -344,7 +364,7 @@ class GPT(nn.Module):
             config_args['dropout'] = override_args['dropout']
         # create a from-scratch initialized minGPT model
         log.info("forcing vocab_size=50257, block_size=1024, bias=True")
-        config = ModelConfig(
+        config = GPTModelConfig(
             **config_args,
             block_size=1024,   # always 1024 for GPT model checkpoints
             vocab_size=50257,  # always 50257 for GPT model checkpoints
@@ -404,9 +424,13 @@ class GPT(nn.Module):
             device_type
     ):
         # start with all of the candidate parameters
-        param_dict = {pn: p for pn, p in self.named_parameters()}
         # filter out those that do not require grad
-        param_dict = {pn: p for pn, p in param_dict.items() if p.requires_grad}
+        # param_dict = {
+        #     pn: p for pn, p in param_dict.items() if p.requires_grad
+        # }
+        param_dict = {
+            pn: p for pn, p in self.named_parameters() if p.requires_grad
+        }
         # create optim groups. Any parameters that is 2D will be weight
         # decayed, otherwise no. i.e. all weight tensors in matmuls +
         # embeddings decay, all biases and layernorms don't.
@@ -431,7 +455,7 @@ class GPT(nn.Module):
             'fused' in inspect.signature(torch.optim.AdamW).parameters
         )
         use_fused = fused_available and device_type == 'cuda'
-        extra_args = dict(fused=True) if use_fused else dict()
+        extra_args = dict(fused=True) if use_fused else {}
         optimizer = torch.optim.AdamW(
             optim_groups,
             lr=learning_rate,
@@ -463,8 +487,7 @@ class GPT(nn.Module):
         # express our flops throughput as ratio of A100 bfloat16 peak flops
         flops_achieved = flops_per_iter * (1.0/dt)  # per second
         flops_promised = 312e12  # A100 GPU bfloat16 peak flops is 312 TFLOPS
-        mfu = flops_achieved / flops_promised
-        return mfu
+        return flops_achieved / flops_promised
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
