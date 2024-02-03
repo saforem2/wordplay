@@ -203,12 +203,13 @@ class BaseConfig(ABC):
 
 
 @dataclass
-class ModelConfig(BaseConfig):
+class GPTModelConfig(BaseConfig):
     n_layer: int = 12
     n_head: int = 12
     n_embd: int = 768
     batch_size: int = 12
     block_size: int = 1024
+    activation: str = 'gelu'
     dropout: float = 0.0
     bias: bool = False
     vocab_size: Optional[int] = None
@@ -239,6 +240,15 @@ class ModelConfig(BaseConfig):
             strs.append('bias')
         return '_'.join(strs)
 
+
+@dataclass
+class LlamaModelConfig(GPTModelConfig):
+
+    def __post_init__(self):
+        self.query_key_layer_scaling = False
+        self.use_rotary_position_embeddings = True
+        self.untie_embeddings_and_output_weights = True
+        self.no
 
 @dataclass
 class OptimizerConfig(BaseConfig):
@@ -399,7 +409,7 @@ class TrainConfig(BaseConfig):
 @dataclass
 class ExperimentConfig(BaseConfig):
     train: TrainConfig
-    model: ModelConfig
+    model: GPTModelConfig
     data: DataConfig
     optimizer: OptimizerConfig
 
@@ -457,7 +467,6 @@ class ExperimentConfig(BaseConfig):
                 if self.data.meta_vocab_size is not None
                 else 50304
             )
-        #     self.model = GPT(self.model_config)
 
     def to_str(self):
         return '_'.join([
@@ -467,7 +476,7 @@ class ExperimentConfig(BaseConfig):
             self.optimizer.to_str(),
         ])
 
-    def reset_model_config(self, model_config: ModelConfig):
+    def reset_model_config(self, model_config: GPTModelConfig):
         self.model = model_config
 
     def reset_optimizer_config(self, optimizer_config: OptimizerConfig):
@@ -495,7 +504,7 @@ class ExperimentConfig(BaseConfig):
 cs = ConfigStore.instance()
 cs.store(name='experiment_config', node=ExperimentConfig)
 cs.store(name='train_config', node=TrainConfig)
-cs.store(name='model_config', node=ModelConfig)
+cs.store(name='model_config', node=GPTModelConfig)
 cs.store(name='data_config', node=DataConfig)
 cs.store(name='optimizer_config', node=OptimizerConfig)
 # cs.store(name='train_config', node=TrainConfig)
