@@ -33,7 +33,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import trange
 import wandb
 
-from wordplay.configs import ExperimentConfig, ModelConfig, add_to_ckpts_file
+from wordplay.configs import ExperimentConfig, GPTModelConfig, add_to_ckpts_file
 from wordplay.model import GPT
 
 
@@ -166,6 +166,93 @@ def average_dict(d: dict) -> dict:
     return avgs
 
 
+def GPT_from_pretrained(
+        init_from: str,
+        dropout: Optional[float] = None,
+) -> tuple[GPTModelConfig, GPT]:
+    log.info(
+        'Initializing from OpenAI GPT-2 Weights: '
+        f'{init_from=}'
+    )
+    override_args = {'dropout': dropout}
+    model = GPT.from_pretrained(
+        init_from,
+        override_args
+    )
+    model_cfg = {
+        k: getattr(model.config, k) for k in [
+            'n_layer',
+            'n_head',
+            'n_embd',
+            'block_size',
+            'bias',
+            'vocab_size'
+        ]
+    }
+    return (model, GPTModelConfig(**model_cfg))
+
+
+def setup_deepspeed(
+            self,
+            model: Optional[torch.nn.Module | GPT],
+            micro_batch_size: Optional[int] = None,
+            ds_config: Optional[dict] = None,
+            ds_config_path: Optional[os.PathLike] = None,
+            optimizer: Optional[torch.optim.Optimizer] = None,
+) -> dict:
+    import deepspeed
+    from ezpz import load_ds_config
+    if ds_config is None:
+        assert ds_config_path is not None, (
+            'One of `ds_config` or `ds_config_path` must be specified.'
+        )
+        ds_config = load_ds_config(Path(ds_config_path).as_posix())
+    assert ds_config is not None
+    if self.config.train.wandb_project is not None:
+        ds_config['wandb'].update({
+            'enabled': True,
+            'project': self.config.train.wandb_project,
+        })
+    # log.warning(
+    #     f'Setting `train_micro_batch_size_per_gpu` to '
+    #     f'{self.config.model.batch_size=}'
+    # )
+    if micro_batch_size is not None:
+        ds_config.update({
+            'train_micro_batch_size_per_gpu': micro_batch_size
+        })
+    assert (
+        model is not None and (
+            # isinstance(model, (torch.nn.Module, GPT))
+            issubclass(model, torch.nn.Module)
+        )
+    )
+    # assert model is not None
+    if (
+            optimizer is not None
+            and isinstance(optimizer, torch.optim.Optimizer)
+    ):
+        engine, optimizer, *_ = deepspeed.initialize(
+            model=model,
+            config=ds_config,
+            optimizer=optimizer,
+        )
+    elif 'optimizer' in ds_config.keys():
+        engine, optimizer, *_ = deepspeed.initialize(
+            model=model,
+            config=ds_config,
+            model_parameters=model.parameters()
+        )
+    else:
+        raise ValueError('Unable to initialize DeepSpeed')
+    assert engine is not None and optimizer is not None
+    return {
+        'model_engine': engine,
+        'optimizer': optimizer,
+        'ds_config': ds_config,
+    }
+
+
 class Trainer:
     def __init__(self, config: ExperimentConfig):
         # self.console = get_console()
@@ -281,22 +368,11 @@ class Trainer:
             f'Initializing from OpenAI GPT-2 Weights: '
             f'{self.config.train.init_from}'
         )
-        override_args = {'dropout': self.config.model.dropout}
-        model = GPT.from_pretrained(
+        model_cfg, model = GPT_from_pretrained(
             self.config.train.init_from,
-            override_args
+            self.config.model.dropout
         )
-        model_cfg = {}
-        for k in [
-                'n_layer',
-                'n_head',
-                'n_embd',
-                'block_size',
-                'bias',
-                'vocab_size'
-        ]:
-            model_cfg[k] = getattr(model.config, k)
-        self.config.reset_model_config(ModelConfig(**model_cfg))
+        self.config.reset_model_config(model_cfg)
         return model
 
     def _setup_deepspeed(
@@ -434,7 +510,7 @@ class Trainer:
             map_location=self.config.train.device
         )
         ckpt_model = checkpoint['model_args']
-        model_config = ModelConfig(
+        model_config = GPTModelConfig(
             n_layer=ckpt_model['n_layer'],
             n_head=ckpt_model['n_head'],
             n_embd=ckpt_model['n_embd'],
