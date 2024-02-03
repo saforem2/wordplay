@@ -1,4 +1,4 @@
-_target_: wordplay.configs.ModelConfig
+_target_: wordplay.configs.GPTModelConfig
 
 # n_layer=48, n_head=25, n_embd=1600
 # 1558M parameters
