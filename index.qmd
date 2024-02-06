@@ -2,7 +2,7 @@
 site-url: https://saforem2.github.io/wordplay
 website:
   open-graph: true
-  description: "wordplay: A minimal LLM for research and education."
+  description: "wordplay: _playing with words_."
   page-navigation: true
   title: "`wordplay` 🎮 💬"
   # title: "💬 wordplay 🤾"
@@ -117,17 +117,7 @@ format:
     output-file: "README.md"
 ---
 
-<!-- ::: {.quarto-title} -->
-<!---->
-<!-- ::: {.quarto-title-block} -->
-<!---->
-#  [`wordplay` 🎮 💬]{.title}
-<!---->
-<!-- ::: -->
-<!---->
-<!-- ::: -->
-
-_Playing with words_.
+<!-- #  [`wordplay` 🎮 💬]{.title} -->
 
 A set of simple, **scalable** and _highly configurable_ tools for working[^etc]
 with LLMs.
@@ -159,13 +149,13 @@ What started as some simple
 <!-- on 🤗 HuggingFace. -->
 <!-- ::: -->
 
-::: {#fig-compare layout="[[40,-10,40]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
+::: {#fig-compare layout="[[40,40]]" layout-valign="bottom" style="display: flex; align-items: flex-end;"}
 
 ![`nanoGPT`](https://github.com/saforem2/wordplay/blob/main/assets/car.png?raw=true){#fig-nanogpt width="256px"}
 
 ![`wordplay`](https://github.com/saforem2/wordplay/blob/main/assets/robot.png?raw=true){#fig-wordplay width="150px"}
 
-Imagine `nanoGPT`, with _all_ the add-ons.
+`nanoGPT`, transformed.
 ::::
 
 <details closed><summary>If you're curious...</summary>
@@ -226,11 +216,11 @@ on LLMs.
     - [Example Workspace](https://wandb.ai/l2hmc-qcd/WordPlay?workspace=user-saforem2)
     - [Example Run](https://wandb.ai/l2hmc-qcd/WordPlay/runs/in83cm3o/workspace?workspace=user-saforem2)
 - [x] [Rich](https://github.com/Textualize/rich) informative logging with [`enrich`](https://github.com/saforem2/enrich)
+- [x] [DeepSpeed](https://deepspeed.ai/) support \[~~completed~~: [2024-12-24](https://github.com/saforem2/wordplay/commit/1aec0ec46eb35ab5cf80a9166d7a5c00a862650a)\]
 
 
 ## In Progress
 
-- [ ] [DeepSpeed](https://deepspeed.ai/) support
 - [ ] [Full-Sharded Data-Parallel (FSDP)](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/) support
     - [Introducing PyTorch Fully Sharded Data Parallel (FSDP) API | PyTorch](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/)
 - [ ] 3D Parallelism support via:

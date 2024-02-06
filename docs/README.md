@@ -1,22 +1,13 @@
-# <span class="title">`wordplay` 🎮 💬</span>
+# `wordplay` 🎮 💬
 Sam Foreman
-2023-12-20
+2024-02-02
 
 - [Background](#background)
 - [Completed](#completed)
 - [In Progress](#in-progress)
 - [Install](#install)
 
-<!-- ::: {.quarto-title} -->
-<!---->
-<!-- ::: {.quarto-title-block} -->
-<!---->
-<!---->
-<!-- ::: -->
-<!---->
-<!-- ::: -->
-
-*Playing with words*.
+<!-- #  [`wordplay` 🎮 💬]{.title} -->
 
 A set of simple, **scalable** and *highly configurable* tools for
 working[^1] with LLMs.
@@ -42,44 +33,13 @@ Karpathy's `nanoGPT` has now grown into the `wordplay` project.
 <!-- [prodia/sdxl-stable-diffusion-xl](https://huggingface.co/spaces/prodia/sdxl-stable-diffusion-xl) -->
 <!-- on 🤗 HuggingFace. -->
 <!-- ::: -->
-
-<div id="fig-compare" layout-valign="bottom"
-style="display: flex; align-items: flex-end;">
-
-<table style="width:100%;">
-<colgroup>
-<col style="width: 44%" />
-<col style="width: 11%" />
-<col style="width: 44%" />
-</colgroup>
-<tbody>
-<tr class="odd">
-<td style="text-align: center;"><div width="44.4%"
-data-layout-align="center">
-<p><img
+<img
 src="https://github.com/saforem2/wordplay/blob/main/assets/car.png?raw=true"
-id="fig-nanogpt" data-ref-parent="fig-compare" data-fig.extended="false"
-width="256" alt="(a) nanoGPT" /></p>
-</div></td>
-<td style="text-align: center;"><div class="quarto-figure-spacer"
-width="11.1%" data-layout-align="center">
-<p> </p>
-</div></td>
-<td style="text-align: center;"><div width="44.4%"
-data-layout-align="center">
-<p><img
+data-ref-parent="fig-compare" width="256" />
+
+<img
 src="https://github.com/saforem2/wordplay/blob/main/assets/robot.png?raw=true"
-id="fig-wordplay" data-ref-parent="fig-compare"
-data-fig.extended="false" width="150" alt="(b) wordplay" /></p>
-</div></td>
-</tr>
-</tbody>
-</table>
-
-Figure 1: Imagine `nanoGPT`, with *all* the add-ons.
-
-</div>
-
+data-ref-parent="fig-compare" width="150" />
 <details closed>
 <summary>
 If you’re curious…
@@ -151,10 +111,11 @@ recent work on LLMs.
     Run](https://wandb.ai/l2hmc-qcd/WordPlay/runs/in83cm3o/workspace?workspace=user-saforem2)
 - [x] [Rich](https://github.com/Textualize/rich) informative logging
   with [`enrich`](https://github.com/saforem2/enrich)
+- [x] [DeepSpeed](https://deepspeed.ai/) support \[~~completed~~:
+  [2024-12-24](https://github.com/saforem2/wordplay/commit/1aec0ec46eb35ab5cf80a9166d7a5c00a862650a)\]
 
 ## In Progress
 
-- [ ] [DeepSpeed](https://deepspeed.ai/) support
 - [ ] [Full-Sharded Data-Parallel
   (FSDP)](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/)
   support
@@ -215,12 +176,13 @@ python3 -m pip install -e .
 
 ------------------------------------------------------------------------
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">12</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">20</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2023</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">10:05:31</span>
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #7f7f7f; text-decoration-color: #7f7f7f; font-style: italic">Last Updated</span>: <span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">02</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">02</span><span style="color: #f06292; text-decoration-color: #f06292">/</span><span style="color: #f06292; text-decoration-color: #f06292; font-weight: bold">2024</span> <span style="color: #7f7f7f; text-decoration-color: #7f7f7f">@</span> <span style="color: #1a8fff; text-decoration-color: #1a8fff; font-weight: bold">21:56:58</span>
 </pre>
 
 ![](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsaforem2.github.io%2Fwordplay&count_bg=%23222222&title_bg=%23303030&icon=&icon_color=%23E7E7E7)
 
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent"
+entry-spacing="0">
 
 <div id="ref-song2023deepspeed4science" class="csl-entry">
 
