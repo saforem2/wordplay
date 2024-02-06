@@ -41,7 +41,8 @@ log = logging.getLogger(__name__)
 
 RANK = get_rank()
 WORLD_SIZE = get_world_size()
-DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = os.environ.get('TORCH_DEVICE', get_torch_device())
+# DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
 ScalarLike = Union[float, int, np.floating, bool]
 
@@ -192,75 +193,74 @@ def GPT_from_pretrained(
     return (model, GPTModelConfig(**model_cfg))
 
 
-def setup_deepspeed(
-            self,
-            model: Optional[torch.nn.Module | GPT],
-            micro_batch_size: Optional[int] = None,
-            ds_config: Optional[dict] = None,
-            ds_config_path: Optional[os.PathLike] = None,
-            optimizer: Optional[torch.optim.Optimizer] = None,
-) -> dict:
-    import deepspeed
-    from ezpz import load_ds_config
-    if ds_config is None:
-        assert ds_config_path is not None, (
-            'One of `ds_config` or `ds_config_path` must be specified.'
-        )
-        ds_config = load_ds_config(Path(ds_config_path).as_posix())
-    assert ds_config is not None
-    if self.config.train.wandb_project is not None:
-        ds_config['wandb'].update({
-            'enabled': True,
-            'project': self.config.train.wandb_project,
-        })
-    # log.warning(
-    #     f'Setting `train_micro_batch_size_per_gpu` to '
-    #     f'{self.config.model.batch_size=}'
-    # )
-    if micro_batch_size is not None:
-        ds_config.update({
-            'train_micro_batch_size_per_gpu': micro_batch_size
-        })
-    assert (
-        model is not None and (
-            # isinstance(model, (torch.nn.Module, GPT))
-            issubclass(model, torch.nn.Module)
-        )
-    )
-    # assert model is not None
-    if (
-            optimizer is not None
-            and isinstance(optimizer, torch.optim.Optimizer)
-    ):
-        engine, optimizer, *_ = deepspeed.initialize(
-            model=model,
-            config=ds_config,
-            optimizer=optimizer,
-        )
-    elif 'optimizer' in ds_config.keys():
-        engine, optimizer, *_ = deepspeed.initialize(
-            model=model,
-            config=ds_config,
-            model_parameters=model.parameters()
-        )
-    else:
-        raise ValueError('Unable to initialize DeepSpeed')
-    assert engine is not None and optimizer is not None
-    return {
-        'model_engine': engine,
-        'optimizer': optimizer,
-        'ds_config': ds_config,
-    }
+# def setup_deepspeed(
+#             model: Optional[torch.nn.Module | GPT],
+#             micro_batch_size: Optional[int] = None,
+#             ds_config: Optional[dict] = None,
+#             ds_config_path: Optional[os.PathLike] = None,
+#             optimizer: Optional[torch.optim.Optimizer] = None,
+# ) -> dict:
+#     import deepspeed
+#     from ezpz import load_ds_config
+#     if ds_config is None:
+#         assert ds_config_path is not None, (
+#             'One of `ds_config` or `ds_config_path` must be specified.'
+#         )
+#         ds_config = load_ds_config(Path(ds_config_path).as_posix())
+#     assert ds_config is not None
+#     if self.config.train.wandb_project is not None:
+#         ds_config['wandb'].update({
+#             'enabled': True,
+#             'project': self.config.train.wandb_project,
+#         })
+#     # log.warning(
+#     #     f'Setting `train_micro_batch_size_per_gpu` to '
+#     #     f'{self.config.model.batch_size=}'
+#     # )
+#     if micro_batch_size is not None:
+#         ds_config.update({
+#             'train_micro_batch_size_per_gpu': micro_batch_size
+#         })
+#     assert (
+#         model is not None and (
+#             # isinstance(model, (torch.nn.Module, GPT))
+#             issubclass(model, torch.nn.Module)
+#         )
+#     )
+#     # assert model is not None
+#     if (
+#             optimizer is not None
+#             and isinstance(optimizer, torch.optim.Optimizer)
+#     ):
+#         engine, optimizer, *_ = deepspeed.initialize(
+#             model=model,
+#             config=ds_config,
+#             optimizer=optimizer,
+#         )
+#     elif 'optimizer' in ds_config.keys():
+#         engine, optimizer, *_ = deepspeed.initialize(
+#             model=model,
+#             config=ds_config,
+#             model_parameters=model.parameters()
+#         )
+#     else:
+#         raise ValueError('Unable to initialize DeepSpeed')
+#     assert engine is not None and optimizer is not None
+#     return {
+#         'model_engine': engine,
+#         'optimizer': optimizer,
+#         'ds_config': ds_config,
+#     }
 
 
 class Trainer:
-    def __init__(self, config: ExperimentConfig):
+    def __init__(self, config: ExperimentConfig, device: Optional[str] = None):
         # self.console = get_console()
         self.config = config
         self.ckpt = None
         self.rank = RANK
         self.world_size = WORLD_SIZE
-        self.device = DEVICE
+        self.device = device if device is not None else DEVICE
         # assert self.device == self.config.device_type
         # NOTE: ---------------------------------------------------------
         # config.optimizer.gas = (
@@ -332,12 +332,15 @@ class Trainer:
                 )
             # self.optimizer = optimizer
             assert isinstance(model, torch.nn.Module)
-            device = get_torch_device()
+            # device = get_torch_device()
             local_rank = get_local_rank()
-            devid = f"{device}:{local_rank}"
+            devid = f"{self.device}:{local_rank}"
             log.critical(f'"{devid=}"')
             model.to(devid)
-            model_engine = DDP(model, device_ids=[devid])
+            if WORLD_SIZE > 1:
+                model_engine = DDP(model, device_ids=[devid])
+            else:
+                model_engine = model
         elif self.config.train.backend.lower() in ['deepspeed', 'ds']:
             from ezpz import load_ds_config
             grad_scaler = None
@@ -408,6 +411,7 @@ class Trainer:
         ds_config.update({
             'train_micro_batch_size_per_gpu': self.config.model.batch_size
         })
+        ds_config |= {'steps_per_print': self.config.train.log_interval}
         assert (
             model is not None and (
                 isinstance(model, (torch.nn.Module, GPT))
@@ -793,6 +797,12 @@ class Trainer:
                     #     # 'training': metrics,
                     # })
 
+    def unwrap_model_engine(self) -> torch.nn.Module:
+        if hasattr(self.model, 'module'):
+            return self.model.module
+        else:
+            return self.model
+
     def evaluate(
             self,
             s: str,
@@ -803,9 +813,10 @@ class Trainer:
             display: Optional[bool] = True,
     ) -> dict[str, str]:
         # seed: Optional[int] = None,
-        assert isinstance(self.model.module, GPT)
-        assert issubclass(GPT, torch.nn.Module)
-        self.model.eval()
+        # assert isinstance(self.model.module, GPT)
+        # assert issubclass(GPT, torch.nn.Module)
+        model = self.unwrap_model_engine()
+        model.eval()
         outputs = {}
         with torch.no_grad():
             start_ids = self.config.data.encode(s)
@@ -815,7 +826,8 @@ class Trainer:
                     device=self.device,
             )[None, ...]
             for idx in range(num_samples):
-                y = self.model.module.generate(
+                # y = self.model.module.generate(
+                y = model.generate(
                     x,
                     max_new_tokens,
                     temperature=temperature,
