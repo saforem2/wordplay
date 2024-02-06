@@ -19,6 +19,7 @@ from hydra.core.config_store import ConfigStore
 import numpy as np
 import rich.repr
 import tiktoken
+# from tokenizers import Tokenizer
 import torch
 # from transformers import data
 
@@ -343,6 +344,8 @@ class DataConfig(BaseConfig):
         else:
             log.warning('No meta.pkl found, assuming GPT-2 encodings...')
             self._enc = tiktoken.get_encoding('gpt2')
+            # self._enc = Tokenizer.from_pretrained('gpt2')
+            # self._enc = self.tokenizer.
             self.encode = (
                 lambda s: (
                     self._enc.encode(s, allowed_special={'<|endoftext|>'})
@@ -450,7 +453,7 @@ class ExperimentConfig(BaseConfig):
                 device_type=self.device_type,
             )
         )
-        log.info(f'Using {self.ctx}')
+        log.info(f'Using {self.ptdtype=} on {self.device_type=}')
         # else torch.amp.autocast(
         #     device_type=self.device_type,
         #     dtype=self.ptdtype
