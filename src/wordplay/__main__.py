@@ -93,15 +93,65 @@ def build_trainer(config: ExperimentConfig) -> Trainer:
     return Trainer(config)
 
 
+def generate_text(
+        trainer: Trainer,
+        query: str,
+        num_samples: int = 1,
+        max_new_tokens: int = 256,
+        top_k: int = 16,
+        display: bool = False
+) -> dict:
+    import ezpz
+    if ezpz.get_rank() == 0:
+        outputs = trainer.evaluate(
+            query,
+            num_samples=num_samples,
+            max_new_tokens=max_new_tokens,
+            top_k=top_k,
+            display=display
+        )
+        log.info(f"['prompt']: '{query}'")
+        log.info("['response']:\n\n" + fr"{outputs['0']['raw']}")
+    # ---------------------------------------
+    # NOTE: `outputs` is a dict of the form:
+    # outputs = {
+    #    "1": {
+    #         "raw": str,
+    #         "prompt": str,
+    #         "formatted": str,
+    #
+    #     },
+    #     ...,
+    #     "num_samples-1": {
+    #         "raw": str,
+    #         "prompt": str,
+    #         "formatted": str,
+    #     }
+    # }
+    # ---------------------------------------
+    return outputs
+
+
 def train(cfg: DictConfig) -> Trainer:
     config: ExperimentConfig = setup_training(cfg)
     # trainer = build_trainer(config)
     trainer = Trainer(config)
     trainer.train()
+    output = None
+    import ezpz
+    if ezpz.get_rank() == 0:
+        output = generate_text(
+            trainer=trainer,
+            query="What is an LLM?",
+            num_samples=1,
+            max_new_tokens=256,
+            top_k=16,
+            display=False
+        )
     if wandb is not None and wandb.run is not None:
         # wandb.run.log_code(HERE, include_fn=include_file)
         trainer.save_ckpt(add_to_wandb=True)
-    return trainer
+    return trainer, output
 
 
 @hydra.main(version_base=None, config_path='./conf', config_name='config')
