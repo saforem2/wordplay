@@ -267,7 +267,12 @@ class Trainer:
             self.ckpt = None  # free up memory
         if self.config.train.compile:
             # unoptimized_model = self.model
-            model = torch.compile(model)  # type:ignore
+            try:
+                model = torch.compile(model)  # type:ignore
+            except Exception as e:
+                if RANK == 0:
+                    log.critical('Unable to `torch.compile(model)`, Skipping!')
+                    log.exception(e)
         # if WORLD_SIZE > 1:
         grad_scaler = None
         if self.config.train.backend.lower() == 'ddp':
@@ -324,11 +329,20 @@ class Trainer:
         self.grad_scaler = grad_scaler
         self.model_engine = model_engine
         self.optimizer = optimizer
-        log.info(60 * '-')
-        log.info(f'• {self.model=}')
-        log.info(f'• {self.grad_scaler=}')
-        log.info(f'• {self.model_engine=}')
-        log.info(f'• {self.optimizer=}')
+        if RANK == 0:
+            log.info(f'• {self.model=}')
+            log.info(f'• {self.grad_scaler=}')
+            log.info(f'• {self.model_engine=}')
+            log.info(f'• {self.optimizer=}')
+            if (
+                        self.config.train.backend.lower() in [
+                            'ds',
+                            'deepspeed'
+                        ]
+                        and self.ds_config is not None
+            ):
+                import json
+                log.info(f'{json.dumps(self.ds_config, indent=4)=}')
 
     def _init_gpt2(self) -> GPT:
         log.info(
@@ -421,7 +435,6 @@ class Trainer:
             )
         )
         assert model is not None
-        log.info(f'{ds_config=}')
         #         # optimizer is not None
         #         isinstance(optimizer, torch.optim.Optimizer)
         # ):
