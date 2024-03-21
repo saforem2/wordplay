@@ -193,67 +193,17 @@ def GPT_from_pretrained(
     return (model, GPTModelConfig(**model_cfg))
 
 
-# def setup_deepspeed(
-#             model: Optional[torch.nn.Module | GPT],
-#             micro_batch_size: Optional[int] = None,
-#             ds_config: Optional[dict] = None,
-#             ds_config_path: Optional[os.PathLike] = None,
-#             optimizer: Optional[torch.optim.Optimizer] = None,
-# ) -> dict:
-#     import deepspeed
-#     from ezpz import load_ds_config
-#     if ds_config is None:
-#         assert ds_config_path is not None, (
-#             'One of `ds_config` or `ds_config_path` must be specified.'
-#         )
-#         ds_config = load_ds_config(Path(ds_config_path).as_posix())
-#     assert ds_config is not None
-#     if self.config.train.wandb_project is not None:
-#         ds_config['wandb'].update({
-#             'enabled': True,
-#             'project': self.config.train.wandb_project,
-#         })
-#     # log.warning(
-#     #     f'Setting `train_micro_batch_size_per_gpu` to '
-#     #     f'{self.config.model.batch_size=}'
-#     # )
-#     if micro_batch_size is not None:
-#         ds_config.update({
-#             'train_micro_batch_size_per_gpu': micro_batch_size
-#         })
-#     assert (
-#         model is not None and (
-#             # isinstance(model, (torch.nn.Module, GPT))
-#             issubclass(model, torch.nn.Module)
-#         )
-#     )
-#     # assert model is not None
-#     if (
-#             optimizer is not None
-#             and isinstance(optimizer, torch.optim.Optimizer)
-#     ):
-#         engine, optimizer, *_ = deepspeed.initialize(
-#             model=model,
-#             config=ds_config,
-#             optimizer=optimizer,
-#         )
-#     elif 'optimizer' in ds_config.keys():
-#         engine, optimizer, *_ = deepspeed.initialize(
-#             model=model,
-#             config=ds_config,
-#             model_parameters=model.parameters()
-#         )
-#     else:
-#         raise ValueError('Unable to initialize DeepSpeed')
-#     assert engine is not None and optimizer is not None
-#     return {
-#         'model_engine': engine,
-#         'optimizer': optimizer,
-#         'ds_config': ds_config,
-#     }
-
-
 class Trainer:
+    """Trainer object.
+
+    - Implements methods for:
+        - forward_step
+        - backward_step
+        - train_step
+        - eval
+        - ...
+    """
+
     def __init__(self, config: ExperimentConfig, device: Optional[str] = None):
         # self.console = get_console()
         self.config = config
@@ -264,8 +214,8 @@ class Trainer:
         # assert self.device == self.config.device_type
         # NOTE: ---------------------------------------------------------
         # config.optimizer.gas = (
-        #     1 if config.optimizer.gradient_accumulation_steps is None
-        #     else config.optimizer.gradient_accumulation_steps
+        #     1 if config.optimizer.gas is None
+        #     else config.optimizer.gas
         # ) -------------------------------------------------------------
         self.train_history = BaseHistory()
         self._gas = self.config.optimizer.gas
@@ -288,9 +238,6 @@ class Trainer:
                 f'Unexpected `init_from` = {self.config.train.init_from}. '
                 'Exiting!'
             )
-        # model = model
-        # if torch.cuda.is_available():
-        #     model.cuda()
         model.to(self.device)
         assert isinstance(model, GPT)
         assert issubclass(GPT, torch.nn.Module)
@@ -298,7 +245,6 @@ class Trainer:
         if wandb.run is not None:
             wandb.watch(model)
             wandb.run.config['num_params'] = num_params
-        # model_block_size = int(self.model.config.block_size)
         if self.config.model.block_size < model.config.block_size:
             model.crop_block_size(self.config.model.block_size)
             self.config.model.set_block_size(self.config.model.block_size)
@@ -328,7 +274,14 @@ class Trainer:
             if torch.cuda.is_available():
                 from torch.cuda.amp.grad_scaler import GradScaler
                 grad_scaler = GradScaler(
-                    enabled=(self.config.train.dtype == 'float16')
+                    enabled=(self.config.train.dtype in (
+                        'fp8',
+                        'bf8',
+                        'fp16',
+                        'bf16',
+                        'float16',
+                        'bfloat16',
+                    ))
                 )
             # self.optimizer = optimizer
             assert isinstance(model, torch.nn.Module)
@@ -337,10 +290,10 @@ class Trainer:
             devid = f"{self.device}:{local_rank}"
             log.critical(f'"{devid=}"')
             model.to(devid)
-            if WORLD_SIZE > 1:
-                model_engine = DDP(model, device_ids=[devid])
-            else:
-                model_engine = model
+            model_engine = (
+                DDP(model, device_ids=[devid]) if WORLD_SIZE > 1
+                else model
+            )
         elif self.config.train.backend.lower() in ['deepspeed', 'ds']:
             from ezpz import load_ds_config
             grad_scaler = None
@@ -349,8 +302,14 @@ class Trainer:
                 from wordplay.configs import DS_CONFIG_PATH
                 ds_config_path = DS_CONFIG_PATH
             self.ds_config = load_ds_config(ds_config_path)
-            if 'optimizer' in self.ds_config.keys():
-                optimizer = None
+            # mbs = self.ds_config.get(
+            #     'train_micro_batch_size_per_gpu',
+            #     None
+            # )
+            # gas = self.ds_config.get(
+            #     'gradient_accumulation_steps',
+            #     None,
+            # )
             assert isinstance(model, torch.nn.Module)
             ds_out = self._setup_deepspeed(
                 ds_config=self.ds_config,
@@ -365,6 +324,11 @@ class Trainer:
         self.grad_scaler = grad_scaler
         self.model_engine = model_engine
         self.optimizer = optimizer
+        log.info(60 * '-')
+        log.info(f'• {self.model=}')
+        log.info(f'• {self.grad_scaler=}')
+        log.info(f'• {self.model_engine=}')
+        log.info(f'• {self.optimizer=}')
 
     def _init_gpt2(self) -> GPT:
         log.info(
@@ -399,11 +363,21 @@ class Trainer:
             )
             ds_config = load_ds_config(Path(ds_config_path).as_posix())
         assert ds_config is not None
-        if self.config.train.wandb_project is not None:
-            ds_config['wandb'].update({
-                'enabled': True,
-                'project': self.config.train.wandb_project,
-            })
+        # if self.config.train.wandb_project is not None:
+        #     ds_config['wandb'].update({
+        #         'enabled': True,
+        #         'project': self.config.train.wandb_project,
+        #     })
+        self.ds_config.update({
+            'train_micro_batch_size_per_gpu': self.config.model.batch_size
+        })
+        if 'optimizer' in self.ds_config.keys():
+            log.warning(
+                'Caught `DeepSpeed` backend and '
+                '`optimizer in `DeepSpeed Config`. '
+                'Setting optimizer to None in '
+            )
+            optimizer = None
         log.warning(
             f'Setting `train_micro_batch_size_per_gpu` to '
             f'{self.config.model.batch_size=}'
@@ -411,7 +385,35 @@ class Trainer:
         ds_config.update({
             'train_micro_batch_size_per_gpu': self.config.model.batch_size
         })
+        ds_config.update({
+            'gradient_accumulation_steps': (
+                self.config.optimizer.gas
+            )
+        })
+        if self.config.train.dtype in [
+            'fp16', 'float16', 'f16', '16'
+        ]:
+            ds_config.update({
+                'fp16': {
+                    'enabled': True,
+                }
+            })
+        if self.config.train.dtype in [
+            'bf16', 'bfloat16', 'bf16', 'b16',
+        ]:
+            ds_config.update({
+                'bf16': {
+                    'enabled': True,
+                }
+            })
+        ds_config.update()
+        # global_batch_size = (
+        #         WORLD_SIZE
+        #         * self.config.model.batch_size
+        #         * self.config.optimizer.gas
+        # )
         ds_config |= {'steps_per_print': self.config.train.log_interval}
+        self.config.iter_num += 1
         assert (
             model is not None and (
                 isinstance(model, (torch.nn.Module, GPT))
@@ -419,10 +421,11 @@ class Trainer:
             )
         )
         assert model is not None
-        if (
-                optimizer is not None
-                and isinstance(optimizer, torch.optim.Optimizer)
-        ):
+        log.info(f'{ds_config=}')
+        #         # optimizer is not None
+        #         isinstance(optimizer, torch.optim.Optimizer)
+        # ):
+        if isinstance(optimizer, torch.optim.Optimizer):
             engine, optimizer, *_ = deepspeed.initialize(
                 model=model,
                 config=ds_config,
@@ -568,11 +571,64 @@ class Trainer:
 
         return time.perf_counter() - t0
 
+    def _train_step_deepspeed(
+            self,
+            x: torch.Tensor,
+            y: torch.Tensor,
+    ):
+        dtf = []
+        dtb = []
+        dt = []
+        lr = (
+            self.get_lr(self.config.iter_num)
+            if self.config.optimizer.decay_lr
+            else self._lr
+        )
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = lr
+        fout = self._forward_step(x, y)
+        # immediately async prefetch next batch while model is doing the
+        # forward pass on the GPU
+        x, y = self.get_batch('train')
+        loss = fout['loss'] / self._gas
+        dtf = fout['dt']
+        tb0 = time.perf_counter()
+        self.model_engine.backward(fout['loss'])
+        self.model_engine.step()
+        dtb = [(_dtb := time.perf_counter() - tb0)]
+        dt = [(_dt := fout['dt'] + _dtb)]
+        timers = {
+            'iter': self.config.iter_num,
+            'dt': np.array(dt),
+            'dt_tot': np.sum(_dt),
+            'dt_avg': np.mean(_dt),
+            'dtf': np.array(dtf),
+            'dtf_tot': np.sum(dtf),
+            'dtf_avg': np.mean(dtf),
+            'dtb': np.array(dtb),
+            'dtb_tot': np.sum(dtb),
+            'dtb_avg': np.mean(dtb)
+        }
+        metrics = {
+            'iter': self.config.iter_num,
+            'loss': loss,
+            'lr': lr,
+        }
+        self.config.iter_num += 1
+        return {
+            'metrics': metrics,
+            'timers': timers,
+            'x': x,
+            'y': y,
+        }
+
     def train_step(
             self,
             x: torch.Tensor,
             y: torch.Tensor,
     ) -> dict:
+        if self.config.train.backend.lower() in ['ds', 'deepspeed']:
+            return self._train_step_deepspeed(x, y)
         lr = (
             self.get_lr(self.config.iter_num)
             if self.config.optimizer.decay_lr

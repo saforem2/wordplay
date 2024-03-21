@@ -62,8 +62,14 @@ HF_DATASETS_CACHE_DIR.mkdir(exist_ok=True, parents=True)
 
 PT_DTYPES = {
     'float32': torch.float32,
+    'float16': torch.float16,
+    'fp16': torch.float16,
+    'f16': torch.float16,
+    '16': torch.float16,
     'bfloat16': torch.bfloat16,
-    'float16': torch.float16
+    'bfp16': torch.float16,
+    'bf16': torch.float16,
+    'b16': torch.float16,
 }
 
 os.environ['WANDB_CACHE_DIR'] = WB_CACHE_DIR.as_posix()
@@ -249,10 +255,12 @@ class LlamaModelConfig(GPTModelConfig):
         self.query_key_layer_scaling = False
         self.use_rotary_position_embeddings = True
         self.untie_embeddings_and_output_weights = True
-        self.no
+
 
 @dataclass
 class OptimizerConfig(BaseConfig):
+    gas: int = 1
+    name: str = "AdamW"
     learning_rate: float = 6e-4
     weight_decay: float = 1e-1
     beta1: float = 0.9
@@ -261,7 +269,6 @@ class OptimizerConfig(BaseConfig):
     decay_lr: bool = True
     lr_decay_iters: int = 600000
     min_lr: float = 6e-5
-    gradient_accumulation_steps: Optional[int] = None
 
     def to_str(self):
         strs = [
@@ -269,24 +276,23 @@ class OptimizerConfig(BaseConfig):
             f'b1-{self.beta1:.2f}'.replace('.', 'p'),
             f'b2-{self.beta2:.2f}'.replace('.', 'p'),
             f'clip-{self.grad_clip:.2f}'.replace('.', 'p'),
-            f'gas-{self.gradient_accumulation_steps}',
+            f'gas-{self.gas}',
         ]
         return '_'.join(strs)
 
-    def __post_init__(self):
-        if (
-                self.gradient_accumulation_steps is None
-                or self.gradient_accumulation_steps == 1
-        ):
-            self.gradient_accumulation_steps = WORLD_SIZE
-        assert self.gradient_accumulation_steps % WORLD_SIZE == 0
-        log.info(
-            f"Rescaling GAS -> GAS // WORLD_SIZE "
-            f"= {self.gradient_accumulation_steps} // {WORLD_SIZE}"
-        )
-        self.gradient_accumulation_steps //= WORLD_SIZE
-        self.gas = self.gradient_accumulation_steps
-        pass
+    # def __post_init__(self):
+    #     # if (
+    #     #         self.gas is None
+    #     #         or self.gas == 1
+    #     # ):
+    #     #     self.gas = WORLD_SIZE
+    #     # self.gas = self.gas
+    #     # assert self.gas % WORLD_SIZE == 0
+    #     # log.info(
+    #     #     f"Rescaling GAS -> GAS // WORLD_SIZE "
+    #     #     f"= {self.gas} // {WORLD_SIZE}"
+    #     # )
+    #     # self.gas //= WORLD_SIZE
 
 
 @dataclass
@@ -421,13 +427,13 @@ class ExperimentConfig(BaseConfig):
         self.world_size = get_world_size()
         self.main_process = (self.rank == 0)
         self.tokens_per_iter = (
-            self.optimizer.gradient_accumulation_steps
+            self.optimizer.gas
             * WORLD_SIZE
             * self.model.batch_size
             * self.model.block_size
         )
         self.samples_per_iter = (
-            self.optimizer.gradient_accumulation_steps
+            self.optimizer.gas
             * WORLD_SIZE
         )
         log.info(f'Tokens per iteration: {self.tokens_per_iter:,}')
