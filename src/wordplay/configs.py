@@ -61,15 +61,18 @@ WB_CACHE_DIR.mkdir(exist_ok=True, parents=True)
 HF_DATASETS_CACHE_DIR.mkdir(exist_ok=True, parents=True)
 
 PT_DTYPES = {
+    '32': torch.float32,
+    'f32': torch.float32,
+    'fp32': torch.float32,
     'float32': torch.float32,
-    'float16': torch.float16,
-    'fp16': torch.float16,
-    'f16': torch.float16,
     '16': torch.float16,
-    'bfloat16': torch.bfloat16,
-    'bfp16': torch.float16,
-    'bf16': torch.float16,
+    'f16': torch.float16,
+    'fp16': torch.float16,
+    'float16': torch.float16,
     'b16': torch.float16,
+    'bf16': torch.float16,
+    'bfp16': torch.float16,
+    'bfloat16': torch.bfloat16,
 }
 
 os.environ['WANDB_CACHE_DIR'] = WB_CACHE_DIR.as_posix()
