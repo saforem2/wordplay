@@ -27,88 +27,63 @@ function join_by {
     fi
 }
 
-function setupVenv() {
-    VENV_DIR="$1"
-    if [[ -d "${VENV_DIR}" ]]; then
-        echo "Found venv at: ${VENV_DIR}"
-        source "${VENV_DIR}/bin/activate"
-    else
-        echo "Skipping setupVenv() on $(hostname)"
+# function setupVenv() {
+#     VENV_DIR="$1"
+#     if [[ -d "${VENV_DIR}" ]]; then
+#         echo "Found venv at: ${VENV_DIR}"
+#         source "${VENV_DIR}/bin/activate"
+#     else
+#         echo "Skipping setupVenv() on $(hostname)"
+#     fi
+# }
+#
+# function loadCondaEnv() {
+#     if [[ "${CONDA_EXE}" ]]; then
+#         echo "Already inside ${CONDA_EXE}, exiting!"
+#     else
+#         MODULE_STR="$1"
+#         module load "conda/${MODULE_STR}"
+#         conda activate base
+#     fi
+# }
+#
+# function setupPython() {
+#     local conda_date=$1
+#     local venv_path=$2
+#     if [[ "${CONDA_EXE}" ]]; then
+#         echo "Caught CONDA_EXE: ${CONDA_EXE}"
+#     else
+#         loadCondaEnv "${conda_date}"
+#     fi
+#     if [[ "${VIRTUAL_ENV}" ]]; then
+#         echo "Caught VIRTUAL_ENV: ${VIRTUAL_ENV}"
+#     else
+#         setupVenv "${venv_path}"
+#     fi
+# }
+#
+#
+setup_conda_sunspot() {
+    if [[ -z "${CONDA_PREFIX:-}" ]]; then
+        module use /soft/preview-modulefiles/24.086.0 ; module load frameworks/2024.04.15.002.lua
     fi
 }
 
-function loadCondaEnv() {
-    if [[ "${CONDA_EXE}" ]]; then
-        echo "Already inside ${CONDA_EXE}, exiting!"
-    else
-        MODULE_STR="$1"
-        module load "conda/${MODULE_STR}"
-        conda activate base
-    fi
-}
 
-function setupPython() {
-    local conda_date=$1
-    local venv_path=$2
-    if [[ "${CONDA_EXE}" ]]; then
-        echo "Caught CONDA_EXE: ${CONDA_EXE}"
-    else
-        loadCondaEnv "${conda_date}"
-    fi
-    if [[ "${VIRTUAL_ENV}" ]]; then
-        echo "Caught VIRTUAL_ENV: ${VIRTUAL_ENV}"
-    else
-        setupVenv "${venv_path}"
-    fi
-
-}
-
-# ┏━━━━━━━━━━┓
-# ┃ ThetaGPU ┃
-# ┗━━━━━━━━━━┛
-function setupThetaGPU() {
-    if [[ $(hostname) == theta* ]]; then
-        export MACHINE="thetaGPU"
-        export NVME_PATH="/raid/scratch/"
-        HOSTFILE=${HOSTFILE:-${COBALT_NODEFILE}}
-        CONDA_DATE="2023-01-11"
-        VENV_DIR="${ROOT}/venvs/${MACHINE}/${CONDA_DATE}"
-        setupPython "${CONDA_DATE}" "${VENV_DIR}"
-        NHOSTS=$(wc -l < "${HOSTFILE}")
-        NGPU_PER_HOST=$(nvidia-smi -L | wc -l)
-        NGPUS=$((NHOSTS * NGPU_PER_HOST))
-        LAUNCH="mpirun -n $NGPUS -N $NGPU_PER_HOST --hostfile $HOSTFILE -x PATH -x LD_LIBRARY_PATH -x https_proxy -x http_proxy -x HTTPS_PROXY -x HTTP_PROXY"
-    else
-        echo "[setupThetaGPU]: Unexpected hostname $(hostname)"
-    fi
-}
-
-# ┏━━━━━━━━━━┓
-# ┃ ThetaGPU ┃
-# ┗━━━━━━━━━━┛
-function setupPolaris() {
-    if [[ $(hostname) == x3* ]]; then
-        export MACHINE="polaris"
-        export NVME_PATH="/raid/scratch/"
-        HOSTFILE=${HOSTFILE:-${PBS_NODEFILE}}
-        CONDA_DATE="2023-10-04"
-        VENV_DIR="${ROOT}/venvs/${MACHINE}/${CONDA_DATE}"
-        setupPython "${CONDA_DATE}" "${VENV_DIR}"
-        NHOSTS=$(wc -l < "${HOSTFILE}")
-        NGPU_PER_HOST=$(nvidia-smi -L | wc -l)
-        NGPUS=$((NHOSTS * NGPU_PER_HOST))
-        LAUNCH="mpiexec --verbose --envall -n $NGPUS -ppn $NGPU_PER_HOST --hostfile ${HOSTFILE}"
-        # alias mpilaunch="$(which mpiexec) --verbose --envall -n $NGPUS -ppn $NGPU_PER_HOST --hostfile ${HOSTFILE}"
-        # alias mpilaunch="${LAUNCH}"
-    else
-        echo "[setupPolaris]: Unexpected hostname $(hostname)"
+########################################################
+# Setup / activate conda environment,
+########################################################
+setup_conda_sunspot() {
+    if [[ -z "${CONDA_PREFIX:-}" ]]; then
+        # module load frameworks/2023.12.15.002
+        module use /soft/preview-modulefiles/24.086.0 ; module load frameworks/2024.04.15.002.lua
     fi
 }
 
 # ┏━━━━━━━┓
 # ┃ NERSC ┃
 # ┗━━━━━━━┛
-function setupPerlmutter() {
+setupPerlmutter() {
     if [[ $(hostname) == login* || $(hostname) == nid* ]]; then
         export MACHINE="Perlmutter"
         SLURM_NODES=$(scontrol show hostname "${SLURM_NODELIST}")
@@ -128,6 +103,91 @@ function setupPerlmutter() {
         echo "[setupPerlmutter]: Unexpected hostname $(hostname)"
     fi
 }
+
+########################
+# Setup conda on Sirius
+########################
+setup_conda_sirius() {
+    if [[ -z "${CONDA_PREFIX-}" && -z "${VIRTUAL_ENV-}" ]]; then
+        export MAMBA_ROOT_PREFIX=/lus/tegu/projects/PolarisAT/foremans/micromamba
+        shell_name=$(echo "${SHELL}" | tr "\/" "\t" | awk '{print $NF}')
+        eval "$("${MAMBA_ROOT_PREFIX}/bin/micromamba" shell hook --shell ${shell_name})"
+        micromamba activate 2024-04-23
+    else
+        echo "Found existing python at: $(which python3)"
+    fi
+}
+
+########################
+# Setup conda on Polaris
+########################
+setup_conda_polaris() {
+    # unset MPICH_GPU_SUPPORT_ENABLED
+    if [[ -z "${CONDA_PREFIX-}" ]]; then
+        module use /soft/modulefiles ; module load conda/2024-04-29 ; conda activate base
+    else
+        echo "Caught CONDA_PREFIX=${CONDA_PREFIX}"
+    fi
+    # setup_venv_from_conda
+}
+
+
+setup_venv_from_conda() {
+    if [[ -z "${CONDA_PREFIX}" ]]; then
+        echo "No ${CONDA_PREFIX} found."  #  Exiting."
+        # exit 1
+    else
+        if [[ -n "${VIRTUAL_ENV}" ]]; then
+            echo "Already inside virtual env at ${VENV_DIR}!"
+        elif [[ -z "${VIRTUAL_ENV}" ]]; then
+            echo "No VIRTUAL_ENV found in environment!"
+            echo "    - Trying to setup from ${CONDA_PREFIX}"
+            CONDA_NAME=$(echo ${CONDA_PREFIX} | tr '\/' '\t' | sed -E 's/mconda3|\/base//g' | awk '{print $NF}')
+            VENV_DIR="${WORKING_DIR}/venvs/${CONDA_NAME}"
+            echo "    - Using VENV_DIR=${VENV_DIR}"
+            # VENV_DIR="venvs/$(echo ${CONDA_PREFIX} | tr '\/' '\t' | sed -E 's/mconda3|\/base//g' | awk '{print $NF}')"
+            # VENV_DIR="${WORKING_DIR}/venvs/$(echo ${CONDA_PREFIX} | tr '\/' '\t' | awk '{print $NF}')"
+            # VENV_DIR="${WORKING_DIR}/venvs/anl_24_q2_release"
+            # if [[ -f "${VENV_DIR}/bin/activate" ]]; then
+            if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
+                printf "\n    - Creating a new virtual env on top of %s in %s" "$(printBlue "${CONDA_NAME}")" "$(printGreen "${VENV_DIR}")"
+                mkdir -p "${VENV_DIR}"
+                python3 -m venv "${VENV_DIR}" --system-site-packages
+                source "${VENV_DIR}/bin/activate" || exit
+            elif [[ -f "${VENV_DIR}/bin/activate" ]]; then
+                echo "    - Found existing venv, activating from $(printBlue "${VENV_DIR}")"
+                source "${VENV_DIR}/bin/activate"
+            else
+                printf "\n    [!! %s]: Unable to locate %s\n" "$(printRed "ERROR")" "$(printMagenta "${VENV_DIR}/bin/activate")"
+            fi
+        fi
+        # else
+        #     printf "[!! %s]: Unable to locate %s\n" "$(printRed "ERROR")" "$(printMagenta "${VENV_DIR}/bin/activate")"
+    fi
+
+}
+
+
+function setup_env() {
+    # machine one of:
+    # [aurora, polaris, sunspot, sirius, perlmutter, ...]
+    local machine=$(get_machine)
+    if [[ -z "${CONDA_PREFIX:-}" ]]; then
+        if [[ "${machine}" == "polaris" ]]; then
+            seutp_conda_polaris
+        elif [[ "${machine}" == "sirius" ]]; then
+            setup_conda_sirius
+        elif [[ "${machine}" == "sunspot" ]]; then
+            setup_conda_sunspot
+        elif [[ "${machine}" == "aurora" ]]; then
+            setup_conda_aurora
+        fi
+    fi
+    if  [[ -z "${VIRTUA_ENV}" ]]; then
+        setup_venv_from_conda
+    fi
+}
+
 
 function setupLogs() {
     LOGDIR="${PARENT}/logs"
@@ -202,18 +262,19 @@ function printJobInfo() {
 }
 
 function setupJob() {
-    if [[ $(hostname) == x3* ]]; then
-        setupPolaris
-    elif [[ $(hostname) == thetagpu* ]]; then
-        export DISABLE_PYMODULE_LOG=1
-        setupThetaGPU
-    elif [[ $(hostname) == nid* || $(hostname) == login* ]]; then
-        setupPelmutter
-        HOSTS="${SLURM_NODELIST}"
-    else
-        echo "[setupJob]: Unexpected hostname $(hostname)"
-        exit 1
-    fi
+    # if [[ $(hostname) == x3* ]]; then
+    #     setupPolaris
+    # elif [[ $(hostname) == thetagpu* ]]; then
+    #     export DISABLE_PYMODULE_LOG=1
+    #     setupThetaGPU
+    # elif [[ $(hostname) == nid* || $(hostname) == login* ]]; then
+    #     setupPelmutter
+    #     HOSTS="${SLURM_NODELIST}"
+    # else
+    #     echo "[setupJob]: Unexpected hostname $(hostname)"
+    #     exit 1
+    # fi
+    setup_env
     export NHOSTS
     export NGPU_PER_HOST
     export NGPUS
