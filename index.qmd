@@ -123,6 +123,68 @@ A set of simple, **scalable** and _highly configurable_ tools for working[^etc]
 with LLMs.
 
 
+> [!IMPORTANT]
+> **Getting Started**
+> 
+> 1. Clone [`saforem2/wordplay`](https://github.com/saforem2/wordplay):
+> 
+>     ```bash
+>     git clone https://github.com/saforem2/wordplay
+>     ```
+> 
+> 2. Setup Python:
+> 
+>     ```bash
+>     PBS_O_WORKDIR=$(pwd) source src/wordplay/bin/helpers.sh
+>     setup_conda_polaris
+>     ```
+> 
+> 3. Install deps:
+> 
+>     ```bash
+>     mkdir -p deps/ezpz
+>     git clone https://github.com/saforem2/ezpz deps/ezpz
+>     python3 -m pip install -e deps/ezpz --require-virtualenv
+>     python3  -m pip install -e .
+>     ```
+> 
+> 4. Prepare data:
+> 
+>     ```bash
+>     python3 data/shakespeare_char/prepare.py
+>     ```
+> 
+> 5. Launch:
+> 
+>     ```bash
+>     source deps/ezpz/src/ezpz/bin/savejobenv  # will define a `launch` alias
+>     launch python3 -m wordplay +experiment=shakespeare data=shakespeare train.backend=DDP train.max_iters=1000 train.log_interval=5 train.compile=true
+>     ```
+
+
+<details closed><summary>Additional <code>utils</code></summary>:
+
+- Login to node from running job:
+
+    ```bash
+    ssh $(qstat -u $USER -Efan | grep x3 | sed "s/\ \ \ //g" | sed 's/\/0\*64//g' | sed "s/+/\n/g" | tail -1)
+    ```
+
+- Create `venv`:
+
+    ```bash
+    VENV_DIR="venvs/$(echo $CONDA_PREFIX | tr '\/' '\t' | awk '{print $NF}')" && echo "Creating venv in: ${VENV_DIR}" && mkdir -p "${VENV_DIR}" && python3 -m venv "${VENV_DIR}" - -system-site-packages && source "${VENV_DIR}/bin/activate"
+    ```
+
+- Submit job:
+
+    ```bash
+    qsub -A argonne_tpc -q S1880309 -l select=2 -l walltime=01:00:00,filesystems=eagle:home -I
+    ```
+
+</details>
+
+
 ## Background {.scrollable}
 
 What started as some simple
