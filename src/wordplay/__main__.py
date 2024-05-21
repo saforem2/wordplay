@@ -11,6 +11,7 @@ from __future__ import (
     print_function,
     unicode_literals
 )
+import ezpz as ez
 import os
 # import sys
 
@@ -22,17 +23,17 @@ import logging
 from dataclasses import asdict
 # from enrich import get_logger
 # from ezpz import get_logger
-import torch
-try:
-    import intel_extension_for_pytorch
-    import oneccl_bindings_for_pytorch
-except (ModuleNotFoundError, ImportError):
-    pass
-
+# import torch
+# try:
+#     import intel_extension_for_pytorch
+#     import oneccl_bindings_for_pytorch
+# except (ModuleNotFoundError, ImportError):
+#     pass
+#
 from hydra.utils import instantiate
 from omegaconf.dictconfig import DictConfig
 
-from ezpz.dist import setup, setup_wandb
+# from ezpz.dist import setup, setup_wandb
 
 from wordplay.configs import HERE, ExperimentConfig, PROJECT_ROOT
 from wordplay.trainer import Trainer
@@ -41,11 +42,15 @@ try:
 except (ImportError, ModuleNotFoundError):
     wandb = None
 
+RANK = ez.get_rank()
+WORLD_SIZE = ez.get_world_size()
+
 # log = get_logger(__name__, "DEBUG")
 log = logging.getLogger(__name__)
+log.setLevel("INFO") if RANK == 0 else log.setLevel("CRITICAL")
 
 
-def include_file(f) -> bool:
+def include_file(f: str | Path) -> bool:
     fp = Path(f)
     exclude_ = (
         'venv/' not in fp.as_posix()
@@ -66,7 +71,7 @@ def include_file(f) -> bool:
 
 
 def setup_training(cfg: DictConfig) -> ExperimentConfig:
-    rank = setup(
+    rank = ez.setup(
         framework=cfg.train.framework,
         backend=cfg.train.backend,
         seed=cfg.train.seed,
@@ -77,7 +82,8 @@ def setup_training(cfg: DictConfig) -> ExperimentConfig:
     else:
         log.setLevel("DEBUG")
         if config.train.use_wandb:
-            setup_wandb(
+            from ezpz.dist import setup_wandb
+            _ = setup_wandb(
                 project_name=config.train.wandb_project,
                 config=cfg,
             )
@@ -138,8 +144,8 @@ def train(cfg: DictConfig) -> Trainer:
     trainer = Trainer(config)
     trainer.train()
     output = None
-    import ezpz
-    if ezpz.get_rank() == 0:
+    # if ezpz.get_rank() == 0:
+    if RANK == 0:
         output = generate_text(
             trainer=trainer,
             query="What is an LLM?",
