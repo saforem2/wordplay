@@ -1,0 +1,10 @@
+_target_: wordplay.configs.GPTModelConfig
+
+n_layer: 10
+n_head: 32
+n_embd: 4096
+batch_size: 1
+block_size: 1024
+dropout: 0.0
+bias: false
+vocab_size: null
