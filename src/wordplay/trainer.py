@@ -33,7 +33,12 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import trange
 import wandb
 
-from wordplay.configs import ExperimentConfig, GPTModelConfig, add_to_ckpts_file
+from wordplay.configs import (
+    ExperimentConfig,
+    GPTModelConfig,
+    add_to_ckpts_file,
+    PROJECT_ROOT,
+)
 from wordplay.model import GPT
 
 
@@ -44,6 +49,10 @@ WORLD_SIZE = get_world_size()
 DEVICE = os.environ.get('TORCH_DEVICE', get_torch_device())
 # DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+log.setLevel(LOG_LEVEL) if RANK == 0 else log.setLevel("CRITICAL")
+
+
 ScalarLike = Union[float, int, np.floating, bool]
 
 
@@ -51,11 +60,20 @@ def print_legend(verbose: bool = True) -> Table:
     legend = {
         "step": "Current training iteration",
         "loss": "Loss value",
-        "dt": "Elapsed time per training step (measured in **ms**)",
-        "dtf": "Elapsed time per forward step (measured in **ms**)",
-        "dtb": "Elapsed time per backward step (measured in **ms**)",
+        "dt": "Elapsed time per training step",
+        "dtf": "Elapsed time per forward step",
+        "dtb": "Elapsed time per backward step",
         "sps": "Samples per second",
-        "mtps": "Tokens per second, measured in MEGA (1 x 10^6) tokens / sec",
+        "sps_per_gpu": "Samples per second (per GPU)",
+        "tps": (
+            ' ' .join(
+                [
+                    "Tokens per second",
+                    # "[measured in MEGA (1 x 10^6) tokens / sec]",
+                ]
+            )
+        ),
+        "tps_per_gpu": "Tokens per second (per GPU)",
         "mfu": "Model flops utilization",
         "train_loss": "Training loss value",
         "val_loss": "Validation loss value",
@@ -79,11 +97,11 @@ def markdown_legend() -> None:
     | :--: | ---- |
     | `step` | Current training iteration |
     | `loss` | Loss value |
-    | `dt` | Elapsed time per training step (measured in **ms**) |
-    | `dtf` | Elapsed time per forward step (measured in **ms**) |
-    | `dtb` | Elapsed time per backward step (measured in **ms**) |
+    | `dt` | Elapsed time per training step |
+    | `dtf` | Elapsed time per forward step |
+    | `dtb` | Elapsed time per backward step |
     | `sps` | Samples per second |
-    | `mtps` | Tokens per second, measured in MEGA (1 x 10^6) tokens / sec  |
+    | `tps` | Tokens per second |
     | `mfu` | Model flops utilization |
     | `train_loss` | Training loss value |
     | `val_loss` | Validation loss value |
@@ -96,7 +114,7 @@ def format_pair(k: str, v: ScalarLike) -> str:
         # return f'{k}={v:<3}'
         return f'{k}={v}'
     # return f'{k}={v:<3.4f}'
-    return f'{k}={v:<6.4f}'
+    return f'{k}={v:<6f}'
 
 
 def summarize_dict(d: dict) -> str:
@@ -242,6 +260,7 @@ class Trainer:
         assert isinstance(model, GPT)
         assert issubclass(GPT, torch.nn.Module)
         num_params = model.get_num_params()
+        log.info(f'Model size: {num_params=}')
         if wandb.run is not None:
             wandb.watch(model)
             wandb.run.config['num_params'] = num_params
@@ -307,6 +326,9 @@ class Trainer:
                 from wordplay.configs import DS_CONFIG_PATH
                 ds_config_path = DS_CONFIG_PATH
             self.ds_config = load_ds_config(ds_config_path)
+            if wandb.run is not None:
+                wandb.run.config.update({'ds_config_path': ds_config_path})
+                wandb.run.config.update({'deepspeed_config': self.ds_config})
             # mbs = self.ds_config.get(
             #     'train_micro_batch_size_per_gpu',
             #     None
@@ -319,7 +341,7 @@ class Trainer:
             ds_out = self._setup_deepspeed(
                 ds_config=self.ds_config,
                 model=model,
-                optimizer=optimizer
+                optimizer=optimizer,
             )
             model_engine = ds_out['model_engine']
             optimizer = ds_out['optimizer']
@@ -342,7 +364,7 @@ class Trainer:
                         and self.ds_config is not None
             ):
                 import json
-                log.info(f'{json.dumps(self.ds_config, indent=4)=}')
+                log.info(json.dumps(dict(self.ds_config), indent=4))
 
     def _init_gpt2(self) -> GPT:
         log.info(
@@ -710,6 +732,8 @@ class Trainer:
             raw_model: Optional[torch.nn.Module | GPT] = None,
             add_to_wandb: bool = False
     ):
+        if RANK != 0:
+            return
         if raw_model is not None:
             model = raw_model  # type:ignore
         else:
@@ -762,6 +786,8 @@ class Trainer:
                 disable=(self.rank != 0),
                 total=train_iters,
         ):
+            if self.config.iter_num == 0 and self.config.train.eval_only:
+                return
             if self.config.iter_num == 0:
                 start_time = os.environ.get('START_TIME', None)
                 if start_time is not None:
@@ -773,30 +799,44 @@ class Trainer:
                             commit=False
                         )
                 _ = print_legend()
-                # markdown_legend()
-            if self.config.iter_num == 0 and self.config.train.eval_only:
-                return
             if (
                     self.config.iter_num % self.config.train.eval_interval == 0
-                    and self.rank == 0
             ):
-                losses = self.estimate_loss()
-                if (
-                    self.config.iter_num > 0
-                    and (losses.get('val', np.inf) < self.config.best_val_loss
-                         or self.config.train.always_save_checkpoint)
-                ):
-                    self.save_ckpt(add_to_wandb=False)
+                query = "What is an LLM?"
+                outputs = self.evaluate(
+                    query,
+                    num_samples=1,
+                    max_new_tokens=256,
+                    top_k=16,
+                    display=False
+                )
+                log.info(f"['prompt']: '{query}'")
+                output0 = outputs.get('0', None)
+                raw = output0.get('raw', None) if output0 is not None else ''
+                # log.info("['response']:\n\n" + fr"{outputs['0']['raw']}")
+                log.info("['response']:\n\n" + fr"{raw}")
+                if self.rank == 0:
+                    losses = self.estimate_loss()
+                    if (
+                        self.config.iter_num > 0
+                        and (losses.get('val', np.inf) < self.config.best_val_loss
+                             or self.config.train.always_save_checkpoint)
+                    ):
+                        self.save_ckpt(add_to_wandb=False)
             output = self.train_step(x=output['x'], y=output['y'])
             t1 = time.perf_counter()
             dt = t1 - t0
             tokens_per_sec = self.config.tokens_per_iter / dt
             samples_per_sec = self.config.samples_per_iter / dt
+            tokens_per_sec_per_gpu = tokens_per_sec / WORLD_SIZE
+            samples_per_sec_per_gpu = samples_per_sec / WORLD_SIZE
             t0 = t1
             output['timers'] |= {
                 'dt_iter': dt,
                 'tokens_per_sec': tokens_per_sec,
                 'samples_per_sec': samples_per_sec,
+                'tokens_per_sec_per_gpu': tokens_per_sec_per_gpu,
+                'samples_per_sec_per_gpu': samples_per_sec_per_gpu,
             }
             # metrics = output['metrics']
             # metrics |= output['timers']
@@ -809,26 +849,27 @@ class Trainer:
                     self.config.iter_num % self.config.train.log_interval == 0
                     and (self.rank == 0)
             ):
-                if train_iter >= 5:
-                    mfu = self.model.estimate_mfu(
-                        (
-                            self.config.model.batch_size
-                            * self.config.optimizer.gas
-                        ),
-                        dt=dt
-                    )
-                    running_mfu = (
-                        mfu if running_mfu == -1.0
-                        else 0.9 * running_mfu + 0.1 * mfu
-                    )
+                mfu = self.model.estimate_mfu(
+                    (
+                        self.config.model.batch_size
+                        * self.config.optimizer.gas
+                    ),
+                    dt=dt
+                )
+                running_mfu = (
+                    mfu if running_mfu == -1.0
+                    else 0.9 * running_mfu + 0.1 * mfu
+                )
                 pvars = {
                     'step': self.config.iter_num,
                     'loss': lossf,
-                    'dt': dt * 1000,
-                    'dtf': output['timers']['dtf_avg'] * 1000,
-                    'dtb': output['timers']['dtb_avg'] * 1000,
+                    'dt': dt,
+                    'dtf': output['timers']['dtf_avg'],
+                    'dtb': output['timers']['dtb_avg'],
                     'sps': samples_per_sec,
-                    'mtps': tokens_per_sec / int(1e6),
+                    'sps_per_gpu': samples_per_sec_per_gpu,
+                    'tps': tokens_per_sec,
+                    'tps_per_gpu': tokens_per_sec_per_gpu,
                     'mfu': running_mfu * 100,
                     'train_loss': losses.get('train', zero).item(),
                     'val_loss': losses.get('val', zero).item(),
