@@ -37,6 +37,11 @@ from omegaconf.dictconfig import DictConfig
 
 from wordplay.configs import HERE, ExperimentConfig, PROJECT_ROOT
 from wordplay.trainer import Trainer
+
+os.environ["WANDB_CACHE_DIR"] = PROJECT_ROOT.joinpath(
+    ".cache",
+    "wandb"
+).as_posix()
 try:
     import wandb
 except (ImportError, ModuleNotFoundError):
@@ -156,7 +161,7 @@ def train(cfg: DictConfig) -> Trainer:
         )
     if wandb is not None and wandb.run is not None:
         # wandb.run.log_code(HERE, include_fn=include_file)
-        trainer.save_ckpt(add_to_wandb=True)
+        trainer.save_ckpt(add_to_wandb=False)
     return trainer, output
 
 
