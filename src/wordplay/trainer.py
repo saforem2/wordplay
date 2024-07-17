@@ -30,7 +30,8 @@ from rich.table import Table
 from rich.text import Text
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
-from tqdm import trange
+from tqdm.auto import trange
+# from tqdm import trange
 import wandb
 
 from wordplay.configs import (
@@ -781,11 +782,17 @@ class Trainer:
             self.config.train.max_iters
             if train_iters is None else train_iters
         )
-        for train_iter in trange(
-                train_iters,
-                disable=(self.rank != 0),
-                total=train_iters,
-        ):
+        # for train_iter in trange(
+        #         train_iters,
+        #         disable=(self.rank != 0),
+        #         total=train_iters,
+        #         position=0,
+        #         leave=True,
+        # ):
+        # columns, console=None, auto_refresh=True, refresh_per_second=10, speed_estimate_period=30.0, transient=False, redirect_stdout=True, redirect_stderr=True, get_time=None, disable=False, expand=False
+        from rich.progress import Progress, track
+        # with Progress() as progress:
+        for i in track(range(train_iters), disable=(self.rank != 0)):
             if self.config.iter_num == 0 and self.config.train.eval_only:
                 return
             if self.config.iter_num == 0:
