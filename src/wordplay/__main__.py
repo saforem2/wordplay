@@ -11,24 +11,15 @@ from __future__ import (
     print_function,
     unicode_literals
 )
-import ezpz as ez
 import os
-# import sys
-
 import hydra
-from pathlib import Path
 import json
 import logging
-# from omegaconf import OmegaConf
+
+import ezpz as ez
+
+from pathlib import Path
 from dataclasses import asdict
-# from ezpz import get_logger
-# import torch
-# try:
-#     import intel_extension_for_pytorch
-#     import oneccl_bindings_for_pytorch
-# except (ModuleNotFoundError, ImportError):
-#     pass
-#
 from hydra.utils import instantiate
 from omegaconf.dictconfig import DictConfig
 
@@ -36,17 +27,6 @@ from omegaconf.dictconfig import DictConfig
 
 from wordplay.configs import HERE, ExperimentConfig, PROJECT_ROOT
 from wordplay.trainer import Trainer
-
-os.environ["WANDB_CACHE_DIR"] = PROJECT_ROOT.joinpath(
-    ".cache",
-    "wandb"
-).as_posix()
-try:
-    import wandb
-    HAS_WANDB = True
-except (ImportError, ModuleNotFoundError):
-    wandb = None
-    HAS_WANDB = False
 
 RANK = ez.get_rank()
 WORLD_SIZE = ez.get_world_size()
@@ -68,11 +48,6 @@ def include_file(f: str | Path) -> bool:
         and fp.suffix not in ['.pt', '.pth']
     )
     include_ = fp.suffix in ['.py', '.log', '.yaml']
-    # return (
-    #     exclude_ and include_
-    #     # 'venv' not in fp.as_posix()
-    #     # and fp.suffix in ['.py', '.log', '.yaml']
-    # )
     return (exclude_ and include_)
 
 
@@ -87,13 +62,20 @@ def setup_training(cfg: DictConfig) -> ExperimentConfig:
         log.setLevel("ERROR")
     else:
         log.setLevel("DEBUG")
-        if config.train.use_wandb:  #  and HAS_WANDB:
+        if config.train.use_wandb:
+            os.environ["WANDB_CACHE_DIR"] = PROJECT_ROOT.joinpath(
+                ".cache",
+                "wandb"
+            ).as_posix()
             try:
+                import wandb
+                HAS_WANDB = True
                 _ = ez.setup_wandb(
                     project_name=config.train.wandb_project,
                     config=cfg,
                 )
             except Exception as exc:
+                wandb = None
                 HAS_WANDB = False
                 if isinstance(exc, wandb.errors.UnsupportedError):
                     log.critical(' '.join([
@@ -158,7 +140,6 @@ def train(cfg: DictConfig) -> Trainer:
     trainer = Trainer(config)
     trainer.train()
     output = None
-    # if ezpz.get_rank() == 0:
     if RANK == 0:
         output = generate_text(
             trainer=trainer,
@@ -169,7 +150,6 @@ def train(cfg: DictConfig) -> Trainer:
             display=False
         )
     if wandb is not None and HAS_WANDB and wandb.run is not None:
-        # wandb.run.log_code(HERE, include_fn=include_file)
         trainer.save_ckpt(add_to_wandb=False)
     return trainer, output
 
@@ -184,4 +164,3 @@ if __name__ == '__main__':
     t0 = time.perf_counter()
     os.environ['START_TIME'] = f'{t0}'
     rank = main()
-    # sys.exit(0)
