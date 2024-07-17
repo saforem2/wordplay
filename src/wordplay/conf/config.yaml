@@ -15,7 +15,7 @@ defaults:
   - optimizer: default.yaml
   - logdir: default.yaml    # Defines where to run experiment using info from cfg
   - override hydra/hydra_logging: colorlog
-  - override hydra/job_logging: enrich
+  - override hydra/job_logging: ezpz
   # - debug: true
   # - override hydra/launcher: joblib
   # https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
