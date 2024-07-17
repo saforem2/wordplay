@@ -21,7 +21,6 @@ import json
 import logging
 # from omegaconf import OmegaConf
 from dataclasses import asdict
-# from enrich import get_logger
 # from ezpz import get_logger
 # import torch
 # try:
@@ -44,8 +43,10 @@ os.environ["WANDB_CACHE_DIR"] = PROJECT_ROOT.joinpath(
 ).as_posix()
 try:
     import wandb
+    HAS_WANDB = True
 except (ImportError, ModuleNotFoundError):
     wandb = None
+    HAS_WANDB = False
 
 RANK = ez.get_rank()
 WORLD_SIZE = ez.get_world_size()
@@ -86,13 +87,21 @@ def setup_training(cfg: DictConfig) -> ExperimentConfig:
         log.setLevel("ERROR")
     else:
         log.setLevel("DEBUG")
-        if config.train.use_wandb:
-            from ezpz.dist import setup_wandb
-            _ = setup_wandb(
-                project_name=config.train.wandb_project,
-                config=cfg,
-            )
-            if wandb is not None and wandb.run is not None:
+        if config.train.use_wandb:  #  and HAS_WANDB:
+            try:
+                _ = ez.setup_wandb(
+                    project_name=config.train.wandb_project,
+                    config=cfg,
+                )
+            except Exception as exc:
+                HAS_WANDB = False
+                if isinstance(exc, wandb.errors.UnsupportedError):
+                    log.critical(' '.join([
+                        "Unsupported wandb version.",
+                        "Update with 'python3 -m pip install --upgrade wandb'"
+                    ]))
+                log.warning(f'Continuing without wandb!!')
+            if wandb is not None and wandb.run is not None and HAS_WANDB:
                 wandb.run.config['tokens_per_iter'] = config.tokens_per_iter
                 wandb.run.config['samples_per_iter'] = config.samples_per_iter
         log.warning(json.dumps(asdict(config), indent=4))
@@ -159,7 +168,7 @@ def train(cfg: DictConfig) -> Trainer:
             top_k=16,
             display=False
         )
-    if wandb is not None and wandb.run is not None:
+    if wandb is not None and HAS_WANDB and wandb.run is not None:
         # wandb.run.log_code(HERE, include_fn=include_file)
         trainer.save_ckpt(add_to_wandb=False)
     return trainer, output
@@ -174,8 +183,5 @@ if __name__ == '__main__':
     import time
     t0 = time.perf_counter()
     os.environ['START_TIME'] = f'{t0}'
-    import wandb
     rank = main()
-    if wandb.run is not None:
-        wandb.finish(0)
     # sys.exit(0)
