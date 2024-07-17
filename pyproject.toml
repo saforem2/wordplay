@@ -37,7 +37,6 @@ dependencies = [
   "wandb",
   "tqdm",
   "ambivalent @ git+https://github.com/saforem2/ambivalent",
-  "enrich @ git+https://github.com/saforem2/enrich",
   "ezpz @ git+https://github.com/saforem2/ezpz",
 ]
 
