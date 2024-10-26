@@ -22,6 +22,10 @@ from pathlib import Path
 from dataclasses import asdict
 from hydra.utils import instantiate
 from omegaconf.dictconfig import DictConfig
+try:
+    import wandb
+except Exception:
+    wandb = None
 
 # from ezpz.dist import setup, setup_wandb
 
@@ -149,7 +153,7 @@ def train(cfg: DictConfig) -> Trainer:
             top_k=16,
             display=False
         )
-    if wandb is not None and HAS_WANDB and wandb.run is not None:
+    if wandb is not None and wandb.run is not None:
         trainer.save_ckpt(add_to_wandb=False)
     return trainer, output
 
