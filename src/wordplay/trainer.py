@@ -24,7 +24,7 @@ from ezpz import (
     get_world_size,
     timeitlogit
 )
-from ezpz.history import BaseHistory
+from ezpz.history import History
 import numpy as np
 from rich.table import Table
 from rich.text import Text
@@ -236,7 +236,7 @@ class Trainer:
         #     1 if config.optimizer.gas is None
         #     else config.optimizer.gas
         # ) -------------------------------------------------------------
-        self.train_history = BaseHistory()
+        self.train_history = History()
         self._gas = self.config.optimizer.gas
         self._lr = self.config.optimizer.learning_rate
         self._min_lr = self.config.optimizer.min_lr
