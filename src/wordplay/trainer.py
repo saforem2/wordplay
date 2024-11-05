@@ -76,11 +76,11 @@ def print_legend(verbose: bool = True) -> Table:
         ),
         "tps_per_gpu": "Tokens per second (per GPU)",
         "mfu": "Model flops utilization",
-        "train_loss": "Training loss value",
-        "val_loss": "Validation loss value",
+        # "train_loss": "Training loss value",
+        # "val_loss": "Validation loss value",
     }
     table = Table(title='Training Legend')
-    table.add_column('abbr', justify='center', style='green')
+    table.add_column('abbr', justify='right', style='green')
     table.add_column('desc', justify='left')
     for key, val in legend.items():
         table.add_row(f'{key}', f'{val}')
@@ -95,7 +95,7 @@ def markdown_legend() -> None:
     from rich import print
     text = """
     | name | description |
-    | :--: | ---- |
+    | ---: | ---- |
     | `step` | Current training iteration |
     | `loss` | Loss value |
     | `dt` | Elapsed time per training step |
@@ -104,9 +104,9 @@ def markdown_legend() -> None:
     | `sps` | Samples per second |
     | `tps` | Tokens per second |
     | `mfu` | Model flops utilization |
-    | `train_loss` | Training loss value |
-    | `val_loss` | Validation loss value |
     """
+    # | `train_loss` | Training loss value |
+    # | `val_loss` | Validation loss value |
     print(Markdown(text))
 
 
@@ -115,7 +115,9 @@ def format_pair(k: str, v: ScalarLike) -> str:
         # return f'{k}={v:<3}'
         return f'{k}={v}'
     # return f'{k}={v:<3.4f}'
-    return f'{k}={v:<6f}'
+    if isinstance(v, (float, np.floating)):
+        return f'{k}={v:<4g}'
+    return f'{k}={v}'
 
 
 def summarize_dict(d: dict) -> str:
@@ -790,9 +792,14 @@ class Trainer:
         #         leave=True,
         # ):
         # columns, console=None, auto_refresh=True, refresh_per_second=10, speed_estimate_period=30.0, transient=False, redirect_stdout=True, redirect_stderr=True, get_time=None, disable=False, expand=False
-        from rich.progress import Progress, track
+        # from rich.progress import Progress, track
         # with Progress() as progress:
-        for i in track(range(train_iters), disable=(self.rank != 0)):
+        # for i in track(
+        #     range(train_iters),
+        #     disable=(self.rank != 0),
+        #     description="\n",
+        # ):
+        for i in range(train_iters):
             if self.config.iter_num == 0 and self.config.train.eval_only:
                 return
             if self.config.iter_num == 0:
@@ -878,8 +885,8 @@ class Trainer:
                     'tps': tokens_per_sec,
                     'tps_per_gpu': tokens_per_sec_per_gpu,
                     'mfu': running_mfu * 100,
-                    'train_loss': losses.get('train', zero).item(),
-                    'val_loss': losses.get('val', zero).item(),
+                    # 'train_loss': losses.get('train', zero).item(),
+                    # 'val_loss': losses.get('val', zero).item(),
                 }
                 summary = summarize_dict(pvars)
                 log.info(Text(summary))
@@ -892,20 +899,31 @@ class Trainer:
                     losses['lossf'] = lossf
                     losses['iter'] = self.config.iter_num
                     wbmetrics = {
-                        f'Training/{k}': (
-                            (wandb.Histogram(v.tolist())
-                                if isinstance(v, np.ndarray) else v)
-                        ) for k, v in output['metrics'].items()
+                        **{
+                            f'Training/{k}': (
+                                (wandb.Histogram(v.tolist())
+                                 if isinstance(v, np.ndarray) else v)
+                            ) for k, v in output['metrics'].items()
+                        },
+                        **{
+                            f'Timing/{k}': (
+                                (wandb.Histogram(v.tolist())
+                                 if isinstance(v, np.ndarray) else v)
+                            ) for k, v in output['timers'].items()
+                        },
+                        **{
+                            f'Loss/{k}': v for k, v in losses.items()
+                        },
                     }
-                    wbmetrics |= {
-                        f'Timing/{k}': (
-                            (wandb.Histogram(v.tolist())
-                                if isinstance(v, np.ndarray) else v)
-                        ) for k, v in output['timers'].items()
-                    }
-                    wbmetrics |= {
-                        f'Loss/{k}': v for k, v in losses.items()
-                    }
+                    # wbmetrics |= {
+                    #     f'Timing/{k}': (
+                    #         (wandb.Histogram(v.tolist())
+                    #             if isinstance(v, np.ndarray) else v)
+                    #     ) for k, v in output['timers'].items()
+                    # }
+                    # wbmetrics |= {
+                    #     f'Loss/{k}': v for k, v in losses.items()
+                    # }
                     wandb.run.log(wbmetrics)
                     # wandb.run.log({
                     #     'losses': losses,
