@@ -13,7 +13,7 @@ bf16:
 #   enabled: true
 zero_optimization:
   stage: 1
-# gradient_accumulation_steps: 8
+gradient_accumulation_steps: 1
 # prescale_gradients: false
 # zero_allow_untested_optimizer: true
 # optimizer:
