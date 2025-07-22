@@ -7,7 +7,7 @@ name = "wordplay"
 description = ''
 readme = "README.md"
 requires-python = ">=3.8"
-license = ""
+# license = ""
 keywords = []
 authors = [
   { name = "Sam Foreman", email = "saforem2@gmail.com" },

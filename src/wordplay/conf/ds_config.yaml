@@ -1,10 +1,10 @@
 ---
 dump_state: false
-wall_clock_breakdown: true
+# wall_clock_breakdown: true
 zero_force_ds_cpu_optimizer: false
-flops_profiler:
-  enabled: true
-  profile_step: 1
+# flops_profiler:
+#   enabled: true
+#   profile_step: 1
 fp16:
   enabled: false
 bf16:
@@ -13,7 +13,7 @@ bf16:
 #   enabled: true
 zero_optimization:
   stage: 1
-gradient_accumulation_steps: 8
+gradient_accumulation_steps: 1
 # prescale_gradients: false
 # zero_allow_untested_optimizer: true
 # optimizer:

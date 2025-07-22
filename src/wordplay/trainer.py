@@ -845,7 +845,8 @@ class Trainer:
             tokens_per_sec_per_gpu = tokens_per_sec / WORLD_SIZE
             samples_per_sec_per_gpu = samples_per_sec / WORLD_SIZE
             t0 = t1
-            output['timers'] |= {
+            # output['timers'] |= {
+            timers = {
                 'dt_iter': dt,
                 'tokens_per_sec': tokens_per_sec,
                 'samples_per_sec': samples_per_sec,
@@ -856,7 +857,8 @@ class Trainer:
             # metrics |= output['timers']
             lossf = output['metrics']['loss'].item() * self._gas
             output['metrics']['loss_tot'] = lossf
-            _ = self.train_history.update(output['timers'])
+            # _ = self.train_history.update(output['timers'])
+            _ = self.train_history.update(timers)
             _ = self.train_history.update(output['metrics'])
             zero = torch.tensor(0.0)
             if (
