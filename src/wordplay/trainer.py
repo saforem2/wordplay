@@ -185,7 +185,7 @@ def average_dict(d: dict) -> dict:
 def GPT_from_pretrained(
     init_from: str,
     dropout: Optional[float] = None,
-) -> tuple[GPTModelConfig, GPT]:
+) -> tuple[GPT, GPTModelConfig]:
     logger.info(f"Initializing from OpenAI GPT-2 Weights: {init_from=}")
     override_args = {"dropout": dropout}
     model = GPT.from_pretrained(init_from, override_args)
@@ -193,7 +193,7 @@ def GPT_from_pretrained(
         k: getattr(model.config, k)
         for k in ["n_layer", "n_head", "n_embd", "block_size", "bias", "vocab_size"]
     }
-    return (model, GPTModelConfig(**model_cfg))
+    return model, GPTModelConfig(**model_cfg)
 
 
 class Trainer:
@@ -280,25 +280,38 @@ class Trainer:
         grad_scaler = None
         if self.config.train.backend.lower() == "ddp":
             if torch.cuda.is_available():
-                if self.config.train.dtype in {
-                    "fp8",
-                    "bf8",
-                    "fp16",
-                    "float16",
-                }:
-                    from torch.cuda.amp.grad_scaler import GradScaler
+                # if self.config.train.dtype in {
+                #     "fp8",
+                #     "bf8",
+                #     "fp16",
+                #     "float16",
+                # }:
+                from torch.cuda.amp.grad_scaler import GradScaler
 
-                    grad_scaler = GradScaler(
-                        enabled=(
-                            self.config.train.dtype
-                            in (
-                                "fp8",
-                                "bf8",
-                                "fp16",
-                                "float16",
-                            )
+                    # grad_scaler = GradScaler(
+                    #     enabled=(
+                    #         self.config.train.dtype
+                    #         in (
+                    #             "fp8",
+                    #             "bf8",
+                    #             "fp16",
+                    #             "float16",
+                #         )
+                #     )
+                # )
+                grad_scaler = GradScaler(
+                    enabled=(
+                        self.config.train.dtype
+                        in (
+                            "fp8",
+                            "bf8",
+                            "fp16",
+                            "bf16",
+                            "float16",
+                            "bfloat16",
                         )
                     )
+                )
             assert isinstance(model, torch.nn.Module)
             local_rank = get_local_rank()
             devid = f"{self.device}:{local_rank}"
@@ -789,11 +802,9 @@ class Trainer:
                 logger.info(f"['prompt']: '{query}'")
                 output0 = outputs.get("0")
                 if isinstance(output0, dict):
-                    logger.info("['response']:\n\n" + rf"{output0.get('raw')}")
+                    logger.info("['response']:\n\n" + fr"{output0.get('raw')}")
                 else:
                     logger.info(f"['response']:\n\n{output0}")
-                # logger.info("['response']:\n\n" + fr"{outputs['0']['raw']}")
-                # logger.info("['response']:\n\n" + rf"{raw}")
                 if self.rank == 0:
                     losses = self.estimate_loss()
                     if self.config.iter_num > 0 and (
