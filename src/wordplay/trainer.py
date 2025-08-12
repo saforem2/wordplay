@@ -110,7 +110,11 @@ def markdown_legend() -> None:
 
 
 def format_pair(k: str, v: ScalarLike) -> str:
-    return f"{k}={v:<4g}" if isinstance(v, (float, np.floating)) else f"{k}={v}"
+    return f"{k}={v:<4g}" if isinstance(v, (float, np.floating)) else (
+        f"{k}={v:d}" if isinstance(v, (int, np.integer)) else (
+            f"{k}={str(v)}" if isinstance(v, bool) else f"{k}={v}"
+        )
+    )
 
 
 def summarize_dict(d: dict) -> str:
@@ -370,7 +374,8 @@ class Trainer:
         logger.info(
             f"Initializing from OpenAI GPT-2 Weights: {self.config.train.init_from}"
         )
-        model_cfg, model = GPT_from_pretrained(
+        # model_cfg, model = GPT_from_pretrained(
+        model, model_cfg = GPT_from_pretrained(
             self.config.train.init_from, self.config.model.dropout
         )
         self.config.reset_model_config(model_cfg)
@@ -921,10 +926,8 @@ class Trainer:
         # assert isinstance(self.model.module, GPT)
         # assert issubclass(GPT, torch.nn.Module)
         model = self.unwrap_model_engine()
-        try:
-            model.eval()
-        except Exception as e:
-            logger.exception(e)
+        assert isinstance(model, torch.nn.Module) and callable(model.generate)
+        model.eval()
         outputs = {}
         with torch.no_grad():
             start_ids = self.config.data.encode(s)
@@ -940,7 +943,7 @@ class Trainer:
                 )
                 response = self.config.data.decode(y[0].tolist())
                 # outputs.append(response)
-                response_ = [i for i in response.split("\n")]
+                response_ = list(iter(response.split("\n")))
                 prompt = response_[0]
                 responses = [*response_[1:]]
                 ret0 = rf"[prompt]: '{prompt}'"
