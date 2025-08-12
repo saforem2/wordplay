@@ -18,6 +18,7 @@ from pathlib import Path
 import time
 from typing import Any, Optional, Union
 
+import ezpz
 from ezpz import get_local_rank, get_rank, get_torch_device, get_world_size, timeitlogit
 from ezpz.history import History
 import numpy as np
@@ -39,15 +40,15 @@ from wordplay.configs import (
 from wordplay.model import GPT
 
 
-log = logging.getLogger(__name__)
+logger = ezpz.get_logger(__name__)
 
 RANK = get_rank()
 WORLD_SIZE = get_world_size()
 DEVICE = os.environ.get("TORCH_DEVICE", get_torch_device())
 # DEVICE = get_torch_device()  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
-LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
-log.setLevel(LOG_LEVEL) if RANK == 0 else log.setLevel("CRITICAL")
+# LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+# logger.setLevel(LOG_LEVEL) if RANK == 0 else logger.setLevel("CRITICAL")
 
 
 ScalarLike = Union[float, int, np.floating, bool]
@@ -109,13 +110,7 @@ def markdown_legend() -> None:
 
 
 def format_pair(k: str, v: ScalarLike) -> str:
-    if isinstance(v, (int, bool, np.integer)):
-        # return f'{k}={v:<3}'
-        return f"{k}={v}"
-    # return f'{k}={v:<3.4f}'
-    if isinstance(v, (float, np.floating)):
-        return f"{k}={v:<4g}"
-    return f"{k}={v}"
+    return f"{k}={v:<4g}" if isinstance(v, (float, np.floating)) else f"{k}={v}"
 
 
 def summarize_dict(d: dict) -> str:
@@ -165,8 +160,8 @@ def _average(val):
         assert isinstance(avg, np.floating)
         return avg
     except Exception:
-        log.exception(f"Failed to average {val}")
-        log.warning("Returning val as is")
+        logger.exception(f"Failed to average {val}")
+        logger.warning("Returning val as is")
         return val
 
 
@@ -191,7 +186,7 @@ def GPT_from_pretrained(
     init_from: str,
     dropout: Optional[float] = None,
 ) -> tuple[GPTModelConfig, GPT]:
-    log.info(f"Initializing from OpenAI GPT-2 Weights: {init_from=}")
+    logger.info(f"Initializing from OpenAI GPT-2 Weights: {init_from=}")
     override_args = {"dropout": dropout}
     model = GPT.from_pretrained(init_from, override_args)
     model_cfg = {
@@ -232,7 +227,7 @@ class Trainer:
         self._diters = self.config.optimizer.lr_decay_iters
         self._witers = self.config.train.warmup_iters
         if self.config.train.init_from == "scratch":
-            log.info("Initializing a new model from scratch")
+            logger.info("Initializing a new model from scratch")
             model = GPT(self.config.model)
         elif self.config.train.init_from == "resume":
             model, ckpt = self.restore_from_ckpt()
@@ -249,7 +244,7 @@ class Trainer:
         assert isinstance(model, GPT)
         assert issubclass(GPT, torch.nn.Module)
         num_params = model.get_num_params()
-        log.info(f"Model size: {num_params=}")
+        logger.info(f"Model size: {num_params=}")
         if wandb.run is not None:
             wandb.watch(model)
             wandb.run.config["num_params"] = num_params
@@ -279,33 +274,35 @@ class Trainer:
                 model = torch.compile(model)  # type:ignore
             except Exception as e:
                 if RANK == 0:
-                    log.critical("Unable to `torch.compile(model)`, Skipping!")
-                    log.exception(e)
+                    logger.critical("Unable to `torch.compile(model)`, Skipping!")
+                    logger.exception(e)
         # if WORLD_SIZE > 1:
         grad_scaler = None
         if self.config.train.backend.lower() == "ddp":
             if torch.cuda.is_available():
-                from torch.cuda.amp.grad_scaler import GradScaler
+                if self.config.train.dtype in {
+                    "fp8",
+                    "bf8",
+                    "fp16",
+                    "float16",
+                }:
+                    from torch.cuda.amp.grad_scaler import GradScaler
 
-                grad_scaler = GradScaler(
-                    enabled=(
-                        self.config.train.dtype
-                        in (
-                            "fp8",
-                            "bf8",
-                            "fp16",
-                            "bf16",
-                            "float16",
-                            "bfloat16",
+                    grad_scaler = GradScaler(
+                        enabled=(
+                            self.config.train.dtype
+                            in (
+                                "fp8",
+                                "bf8",
+                                "fp16",
+                                "float16",
+                            )
                         )
                     )
-                )
-            # self.optimizer = optimizer
             assert isinstance(model, torch.nn.Module)
-            # device = get_torch_device()
             local_rank = get_local_rank()
             devid = f"{self.device}:{local_rank}"
-            log.critical(f'"{devid=}"')
+            logger.critical(f"{RANK=}:{devid=}")
             model.to(devid)
             model_engine = DDP(model, device_ids=[devid]) if WORLD_SIZE > 1 else model
         elif self.config.train.backend.lower() in ["deepspeed", "ds"]:
@@ -344,20 +341,20 @@ class Trainer:
         self.model_engine = model_engine
         self.optimizer = optimizer
         if RANK == 0:
-            log.info(f"• {self.model=}")
-            log.info(f"• {self.grad_scaler=}")
-            log.info(f"• {self.model_engine=}")
-            log.info(f"• {self.optimizer=}")
+            logger.info(f"• {self.model=}")
+            logger.info(f"• {self.grad_scaler=}")
+            logger.info(f"• {self.model_engine=}")
+            logger.info(f"• {self.optimizer=}")
             if (
                 self.config.train.backend.lower() in ["ds", "deepspeed"]
                 and self.ds_config is not None
             ):
                 import json
 
-                log.info(json.dumps(dict(self.ds_config), indent=4))
+                logger.info(json.dumps(dict(self.ds_config), indent=4))
 
     def _init_gpt2(self) -> GPT:
-        log.info(
+        logger.info(
             f"Initializing from OpenAI GPT-2 Weights: {self.config.train.init_from}"
         )
         model_cfg, model = GPT_from_pretrained(
@@ -397,13 +394,13 @@ class Trainer:
             {"train_micro_batch_size_per_gpu": self.config.model.batch_size}
         )
         if "optimizer" in self.ds_config.keys():
-            log.warning(
+            logger.warning(
                 "Caught `DeepSpeed` backend and "
                 "`optimizer in `DeepSpeed Config`. "
                 "Setting optimizer to None in "
             )
             optimizer = None
-        log.warning(
+        logger.warning(
             f"Setting `train_micro_batch_size_per_gpu` to "
             f"{self.config.model.batch_size=}"
         )
@@ -439,7 +436,7 @@ class Trainer:
                 }
             )
 
-        ds_config.update()
+        # ds_config.update()
         # global_batch_size = (
         #         WORLD_SIZE
         #         * self.config.model.batch_size
@@ -461,7 +458,7 @@ class Trainer:
                 config=ds_config,
                 optimizer=optimizer,
             )
-        elif "optimizer" in ds_config.keys():
+        elif "optimizer" in ds_config:
             engine, optimizer, *_ = deepspeed.initialize(
                 model=model, config=ds_config, model_parameters=model.parameters()
             )
@@ -528,7 +525,7 @@ class Trainer:
     def restore_from_ckpt(
         self, ckpt_dir: Optional[str | PathLike] = None
     ) -> tuple[torch.nn.Module, dict]:
-        log.info(f"Resuming training from {self.config.data.out_dir}")
+        logger.info(f"Resuming training from {self.config.data.out_dir}")
         ckpt_dir = str(self.config.data.out_dir) if ckpt_dir is None else ckpt_dir
         assert ckpt_dir is not None
         ckpt_path = Path(ckpt_dir).joinpath("ckpt.pt")
@@ -605,6 +602,8 @@ class Trainer:
         loss = fout["loss"] / self._gas
         dtf = fout["dt"]
         tb0 = time.perf_counter()
+        assert callable(self.model_engine.backward)
+        assert callable(self.model_engine.step)
         self.model_engine.backward(fout["loss"])
         self.model_engine.step()
         dtb = [(_dtb := time.perf_counter() - tb0)]
@@ -675,7 +674,7 @@ class Trainer:
             dtf.append(fout["dt"])
             dtb_ = self._backward_step(loss, propagate_grads=is_last_micro_step)
             dtb.append(dtb_)
-            dt.append(dtf + dtb)
+            dt.append(fout["dt"] + dtb_)
         timers = {
             "iter": self.config.iter_num,
             "dt": np.array(dt),
@@ -730,8 +729,8 @@ class Trainer:
         # assert raw_model is not None
         ckptfile = Path(os.getcwd()).joinpath("ckpt.pt")
         modelfile = Path(os.getcwd()).joinpath("model.pth")
-        log.info(f"Saving checkpoint to: {os.getcwd()}")
-        log.info(f"Saving model to: {modelfile}")
+        logger.info(f"Saving checkpoint to: {os.getcwd()}")
+        logger.info(f"Saving model to: {modelfile}")
         torch.save(model.state_dict(), modelfile.as_posix())
         torch.save(ckpt, ckptfile.as_posix())
         add_to_ckpts_file(Path(os.getcwd()))
@@ -776,7 +775,7 @@ class Trainer:
                 start_time = os.environ.get("START_TIME", None)
                 if start_time is not None:
                     startup_time = time.perf_counter() - float(start_time)
-                    log.info(f"Startup time: {startup_time:.4f}")
+                    logger.info(f"Startup time: {startup_time:.4f}")
                     if wandb is not None and wandb.run is not None:
                         wandb.run.log(
                             {"Timing/startup_time": startup_time}, commit=False
@@ -787,11 +786,14 @@ class Trainer:
                 outputs = self.evaluate(
                     query, num_samples=1, max_new_tokens=256, top_k=16, display=False
                 )
-                log.info(f"['prompt']: '{query}'")
-                output0 = outputs.get("0", None)
-                raw = output0.get("raw", None) if output0 is not None else ""
-                # log.info("['response']:\n\n" + fr"{outputs['0']['raw']}")
-                log.info("['response']:\n\n" + rf"{raw}")
+                logger.info(f"['prompt']: '{query}'")
+                output0 = outputs.get("0")
+                if isinstance(output0, dict):
+                    logger.info("['response']:\n\n" + rf"{output0.get('raw')}")
+                else:
+                    logger.info(f"['response']:\n\n{output0}")
+                # logger.info("['response']:\n\n" + fr"{outputs['0']['raw']}")
+                # logger.info("['response']:\n\n" + rf"{raw}")
                 if self.rank == 0:
                     losses = self.estimate_loss()
                     if self.config.iter_num > 0 and (
@@ -847,7 +849,7 @@ class Trainer:
                     # 'val_loss': losses.get('val', zero).item(),
                 }
                 summary = summarize_dict(pvars)
-                log.info(Text(summary))
+                logger.info(Text(summary))
                 if wandb.run is not None:
                     losses |= {
                         "lossf": lossf,
@@ -892,11 +894,8 @@ class Trainer:
                     #     # 'training': metrics,
                     # })
 
-    def unwrap_model_engine(self) -> torch.nn.Module:
-        if hasattr(self.model, "module"):
-            return self.model.module
-        else:
-            return self.model
+    def unwrap_model_engine(self):
+        return self.model.module if hasattr(self.model, "module") else self.model
 
     def evaluate(
         self,
@@ -911,7 +910,10 @@ class Trainer:
         # assert isinstance(self.model.module, GPT)
         # assert issubclass(GPT, torch.nn.Module)
         model = self.unwrap_model_engine()
-        model.eval()
+        try:
+            model.eval()
+        except Exception as e:
+            logger.exception(e)
         outputs = {}
         with torch.no_grad():
             start_ids = self.config.data.encode(s)
@@ -933,18 +935,18 @@ class Trainer:
                 ret0 = rf"[prompt]: '{prompt}'"
                 ret1 = "> " + "\n> ".join(responses)
                 if display:
-                    log.info(f"{ret0}")
-                    log.info(f"{ret1}")
+                    logger.info(f"{ret0}")
+                    logger.info(f"{ret1}")
                 outputs[f"{idx}"] = {
                     "raw": response,
                     "prompt": Text(ret0, style="string"),
                     "formatted": Text(ret1, style="blockquote"),
                 }
-                # log.info(f'[prompt]: "{s}"')
+                # logger.info(f'[prompt]: "{s}"')
                 # # responses = reponse.split('\n ')
-                # log.info('> "' + '\n> '.join(response.split('\n ')) + '"')
+                # logger.info('> "' + '\n> '.join(response.split('\n ')) + '"')
                 #
-                # log.info('\n'.join)
-                # log.info(f'> "{response}"')
-                # log.info(100 * '-')
+                # logger.info('\n'.join)
+                # logger.info(f'> "{response}"')
+                # logger.info(100 * '-')
         return outputs
